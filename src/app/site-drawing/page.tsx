@@ -34,21 +34,9 @@ export default function SiteDrawing() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div className="flex flex-col items-center">
-          <h2 className="text-lg font-semibold mb-2 text-brand-orange text-center">PDF Floor Plan</h2>
-          <object
-            data="/Floor%20Plan%20Dacha%20Ringwood%20Office.pdf"
-            type="application/pdf"
-            width="100%"
-            style={{ height: '400px', maxHeight: '600px', width: '100%' }}
-            className="rounded shadow border"
-          >
-            <p>PDF cannot be displayed. <a href="/Floor%20Plan%20Dacha%20Ringwood%20Office.pdf" target="_blank" rel="noopener noreferrer" className="text-brand-orange underline">Download PDF</a></p>
-          </object>
-        </div>
-        <div className="flex flex-col items-center">
           <h2 className="text-lg font-semibold mb-2 text-brand-orange text-center">Walkthrough Video</h2>
           <video
-            src="/Dacha%20SSI%20Ringwood%20Office%20Walkthrough.mp4"
+            src="/Dacha SSI Ringwood Office Walkthrough COMPRESSED.mp4"
             controls
             loop
             autoPlay
