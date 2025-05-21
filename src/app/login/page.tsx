@@ -8,16 +8,15 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simple authentication - replace with your actual auth logic
-    if (username === "admin" && password === "admin123") {
-      // Set auth cookie
-      document.cookie = "auth=true; path=/";
+    if (username === "Dacha2025LIDAR" && password === "D4ch4LIDARLAR4337$") {
+      // Set auth cookie with proper attributes
+      document.cookie = "auth=true; path=/; max-age=86400; SameSite=Strict; secure";
       router.push("/dashboard");
     } else {
-      setError("Invalid username or password");
+      setError("Invalid credentials");
     }
   };
 
