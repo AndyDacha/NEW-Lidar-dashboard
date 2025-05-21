@@ -364,25 +364,33 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    const brokerUrl = process.env.NEXT_PUBLIC_MQTT_BROKER_URL || "";
-    const mqttUsername = process.env.NEXT_PUBLIC_MQTT_USERNAME;
-    const mqttPassword = process.env.NEXT_PUBLIC_MQTT_PASSWORD;
-    const mqttClientId = process.env.NEXT_PUBLIC_MQTT_CLIENT_ID || "dashboard-client-modern";
-
-    const client = mqtt.connect(brokerUrl, {
-      username: mqttUsername,
-      password: mqttPassword,
-      clientId: mqttClientId,
+    const client = mqtt.connect("wss://navyalkali-710f05f8.a01.euc1.aws.hivemq.cloud:8884/mqtt", {
+      username: "AndyF",
+      password: "Flasheye123",
+      clientId: "dashboard-client-modern",
       protocol: "wss"
     });
 
     client.on("connect", () => {
+      console.log('MQTT Connected successfully');
       client.subscribe("Flasheye/flasheye-edge-35/event");
       client.subscribe("Flasheye/flasheye-edge-35/sensor_diagnostics");
       client.subscribe("Flasheye/flasheye-edge-35/boxes");
       client.subscribe("Flasheye/flasheye-edge-35/alarm");
       client.subscribe("Flasheye/flasheye-edge-35/tracking");
       client.subscribe("Flasheye/flasheye-edge-35/speed_event");
+    });
+
+    client.on("error", (err) => {
+      console.error('MQTT Connection error:', err);
+    });
+
+    client.on("close", () => {
+      console.log('MQTT Connection closed');
+    });
+
+    client.on("offline", () => {
+      console.log('MQTT Client went offline');
     });
 
     client.on("message", (topic, message) => {
