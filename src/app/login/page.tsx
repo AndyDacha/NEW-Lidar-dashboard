@@ -92,6 +92,16 @@ export default function LoginPage() {
             Sign In
           </button>
         </form>
+
+        <video
+          src="/Dacha SSI Ringwood Office Walkthrough COMPRESSED.mp4"
+          controls
+          loop
+          autoPlay
+          muted
+          className="rounded shadow border w-full"
+          style={{ height: '400px', maxHeight: '600px' }}
+        />
       </div>
     </div>
   );
