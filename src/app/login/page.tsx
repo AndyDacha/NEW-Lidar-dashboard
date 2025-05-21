@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { users } from "../auth/users";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -10,13 +11,34 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (username === "Dacha2025LIDAR" && password === "D4ch4LIDARLAR4337$") {
-      // Set auth cookie with proper attributes
-      document.cookie = "auth=true; path=/; max-age=86400; SameSite=Strict; secure";
+    const user = users.find(u => u.username === username && u.password === password);
+    if (user) {
+      document.cookie = `auth=true; path=/; max-age=86400; SameSite=Strict; secure`;
+      document.cookie = `userRole=${user.role}; path=/; max-age=86400; SameSite=Strict; secure`;
+      document.cookie = `username=${user.username}; path=/; max-age=86400; SameSite=Strict; secure`;
       router.push("/scott-work");
+      fetch('/api/log-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          user: username,
+          action: 'Login Success',
+          ip: '' // You can try to get the IP from the backend if needed
+        })
+      });
     } else {
-      setError("Invalid credentials");
+      setError("Invalid username or password");
+      fetch('/api/log-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          user: username,
+          action: 'Login Failure',
+          ip: '' // You can try to get the IP from the backend if needed
+        })
+      });
     }
   };
 
