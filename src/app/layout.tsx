@@ -23,16 +23,15 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <div className="flex min-h-screen">
-          {/* Hover-triggered side menu */}
+          {/* Hover-triggered side menu and trigger button */}
           {!isLoginPage && (
             <div className="group fixed left-0 top-0 h-full z-50">
-              {/* Menu trigger button */}
+              {/* Menu trigger button and menu panel are both hidden on login page */}
               <button className="absolute left-0 top-4 bg-brand-orange text-white p-2 rounded-r-lg shadow-lg hover:bg-brand-orange/90 transition-all duration-300">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              {/* Menu panel */}
               <div className="absolute left-0 top-0 h-full w-56 bg-brand-grey transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-in-out shadow-xl">
                 <div className="p-6">
                   <h2 className="text-xl font-bold text-white mb-8">Dashboard</h2>
