@@ -1159,7 +1159,7 @@ export default function Dashboard() {
         <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 ${
           objectPresence['Fire Exit'] 
             ? 'bg-red-500 text-white border-red-600' 
-            : 'bg-green-500 text-brand-grey border-green-600'
+            : 'bg-green-500 text-black border-green-600'
         } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
           <h2 className="text-xl font-bold">Fire Exit Alert</h2>
           <p className="text-lg mt-2">
@@ -1172,7 +1172,7 @@ export default function Dashboard() {
             ? 'bg-red-500 text-white border-red-600 flashing-alert'
             : (objectCounts['Gym Car Park'] || 0) >= 1
               ? 'bg-yellow-400 text-black border-yellow-600'
-              : 'bg-green-500 text-brand-grey border-green-600'
+              : 'bg-green-500 text-black border-green-600'
         } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
           <h2 className="text-xl font-bold">Gym Car Park Alert</h2>
           <p className="text-lg mt-2">
@@ -1187,7 +1187,7 @@ export default function Dashboard() {
         <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 ${
           objectPresence['Male Changing'] 
             ? 'bg-red-500 text-white border-red-600' 
-            : 'bg-green-500 text-brand-grey border-green-600'
+            : 'bg-green-500 text-black border-green-600'
         } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
           <h2 className="text-xl font-bold">Male Changing</h2>
           <p className="text-lg mt-2">
@@ -1198,7 +1198,7 @@ export default function Dashboard() {
         <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 ${
           objectPresence['Female Changing'] 
             ? 'bg-red-500 text-white border-red-600' 
-            : 'bg-green-500 text-brand-grey border-green-600'
+            : 'bg-green-500 text-black border-green-600'
         } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
           <h2 className="text-xl font-bold">Female Changing</h2>
           <p className="text-lg mt-2">
@@ -1209,7 +1209,7 @@ export default function Dashboard() {
         <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 ${
           objectPresence['Comms Room'] 
             ? 'bg-red-500 text-white border-red-600' 
-            : 'bg-green-500 text-brand-grey border-green-600'
+            : 'bg-green-500 text-black border-green-600'
         } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
           <h2 className="text-xl font-bold">Comms Room</h2>
           <p className="text-lg mt-2">
