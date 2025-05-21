@@ -13,7 +13,7 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === USERNAME && password === PASSWORD) {
+    if (username === "Dacha2025LIDAR" && password === "D4ch4LIDARLAR4337$") {
       document.cookie = `auth=1; path=/`;
       router.push("/dashboard");
     } else {
