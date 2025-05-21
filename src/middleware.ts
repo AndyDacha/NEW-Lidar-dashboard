@@ -11,7 +11,9 @@ export function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/reporting') ||
     request.nextUrl.pathname.startsWith('/site-drawing') ||
     request.nextUrl.pathname.startsWith('/mqtt-log') ||
-    request.nextUrl.pathname.startsWith('/info')
+    request.nextUrl.pathname.startsWith('/info') ||
+    request.nextUrl.pathname.startsWith('/user-log') ||
+    request.nextUrl.pathname.startsWith('/scott-work');
 
   // If on a protected route and no valid auth cookie
   if (isProtectedRoute && (!authCookie || authCookie.value !== 'true')) {
@@ -31,6 +33,8 @@ export const config = {
     '/reporting/:path*',
     '/site-drawing/:path*',
     '/mqtt-log/:path*',
-    '/info/:path*'
+    '/info/:path*',
+    '/user-log/:path*',
+    '/scott-work/:path*'
   ]
 } 
