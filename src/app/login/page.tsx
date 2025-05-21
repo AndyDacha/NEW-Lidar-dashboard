@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -8,13 +8,21 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.push("/dashboard");
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [router]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (username === "Dacha2025LIDAR" && password === "D4ch4LIDARLAR4337$") {
       // Set auth cookie with proper attributes
       document.cookie = "auth=true; path=/; max-age=86400; SameSite=Strict; secure";
-      router.push("/dashboard");
+      router.push("/scott-work");
     } else {
       setError("Invalid credentials");
     }
