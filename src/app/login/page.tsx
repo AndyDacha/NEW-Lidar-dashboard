@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -7,14 +7,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      router.push("/dashboard");
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [router]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
