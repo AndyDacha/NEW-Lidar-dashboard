@@ -57,7 +57,7 @@ export default function Sidebar() {
       <div className="absolute left-0 bottom-0 w-56 p-6">
         <button
           onClick={handleLogout}
-          className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors"
+          className="w-full bg-brand-orange hover:bg-brand-orange/90 text-white font-bold py-2 px-4 rounded transition-colors"
         >
           Log Out
         </button>
