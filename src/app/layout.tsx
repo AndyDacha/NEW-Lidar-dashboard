@@ -1,3 +1,4 @@
+"use client";
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
@@ -16,7 +17,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+  const pathname = usePathname();
   const isLoginPage = pathname === '/login';
 
   return (
