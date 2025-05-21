@@ -36,7 +36,7 @@ export default function SiteDrawing() {
         <div className="flex flex-col items-center">
           <h2 className="text-lg font-semibold mb-2 text-brand-orange text-center">Walkthrough Video</h2>
           <video
-            src="/Dacha_SSI_Ringwood_Office_Walkthrough_COMPRESSED.mp4"
+            src="/Ringwood_Office.mp4"
             controls
             loop
             autoPlay
