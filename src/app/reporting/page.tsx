@@ -9,9 +9,10 @@ import {
   Title,
   Tooltip,
   Legend,
+  ArcElement,
 } from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 export default function ReportingPage() {
   // Helper to get date string (YYYY-MM-DD) from time
