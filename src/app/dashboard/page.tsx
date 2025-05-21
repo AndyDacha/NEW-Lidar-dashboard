@@ -189,6 +189,21 @@ export default function Dashboard() {
   const [showAlerts, setShowAlerts] = useState(true);
   const [ballAlert, setBallAlert] = useState(false);
 
+  // Add useEffect for defibrillator alert timeout
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    if (simulateDefib) {
+      timeoutId = setTimeout(() => {
+        setSimulateDefib(false);
+      }, 15000); // 15 seconds
+    }
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [simulateDefib]);
+
   const isUnstaffedHours = () => {
     const now = new Date();
     const day = now.getDay();
@@ -1249,7 +1264,7 @@ export default function Dashboard() {
       )}
 
       {/* Dedicated DEFIBRILLATOR IN USE Alert Section */}
-      {((objectCounts['Treadmill 5'] || 0) > 0 || simulateDefib) && (
+      {simulateDefib && (
         <div className="w-full max-w-3xl mx-auto mb-8">
           <div className="flashing-alert bg-red-100 border-l-8 border-red-600 text-red-800 p-6 rounded-xl shadow-xl flex items-center justify-center">
             <svg className="w-8 h-8 mr-4 text-red-600 animate-pulse" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -1435,19 +1450,64 @@ export default function Dashboard() {
               // CCTV Stream Box
               <div className="w-full flex flex-col items-center">
                 <span className="text-brand-orange font-semibold block text-center mb-2">CCTV Live Stream</span>
-                <iframe
-                  src="http://localhost:4000/cctv-stream"
-                  allow="autoplay; encrypted-media"
-                  allowFullScreen
-                  className="mt-2 w-full h-64 rounded border border-brand-grey/20"
-                  title="CCTV Live Stream"
-                />
+                <div className="w-full bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Stream URL</label>
+                      <input
+                        type="text"
+                        placeholder="rtsp://camera.example.com/stream"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        disabled
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                      <input
+                        type="text"
+                        placeholder="admin"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        disabled
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                      <input
+                        type="password"
+                        placeholder="••••••••"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                        disabled
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2">
+                      Note: CCTV stream credentials are managed by system administrators
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : idx === 2 ? (
+              // Event Logs Box
+              <div className="w-full flex flex-col items-center">
+                <span className="text-brand-orange font-semibold block text-center mb-2">Event Logs</span>
+                <div className="w-full bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div className="space-y-2 text-sm">
+                    <div className="border-b pb-2">
+                      <strong>Gym Area</strong>: <span className="text-brand-orange">human</span> (ID: MEM_001) detected at 14:30:45
+                    </div>
+                    <div className="border-b pb-2">
+                      <strong>Cardio Area</strong>: <span className="text-brand-orange">treadmill</span> (ID: EQ_002) detected at 14:31:12
+                    </div>
+                    <div className="border-b pb-2">
+                      <strong>Free Weights</strong>: <span className="text-brand-orange">dumbbell</span> (ID: EQ_003) detected at 14:32:05
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               // Regular Video Upload Box
               <>
                 <label className="block w-full text-center cursor-pointer mb-2">
-                  <span className="text-brand-orange font-semibold">{idx === 0 ? 'CCTV Capture' : idx === 1 ? 'CCTV Live Feed' : idx === 2 ? 'Event Logs' : `Upload MP4 Video ${idx + 1}`}</span>
+                  <span className="text-brand-orange font-semibold">{idx === 0 ? 'CCTV Capture' : idx === 1 ? 'CCTV Live Feed' : idx === 2 ? 'Event Logs' : 'Point Cloud Capture'}</span>
                   <input
                     type="file"
                     accept="video/quicktime,video/mp4,video/webm,video/ogg"
@@ -1477,14 +1537,15 @@ export default function Dashboard() {
                 )}
                 {/* Show default video for CCTV Capture if no file uploaded */}
                 {idx === 0 && !videoUrls[0] && !videoErrors[0] && (
-                  <video
-                    src="/Sample%20Video.mov"
-                    controls
-                    loop
-                    autoPlay
-                    muted
-                    className="mt-2 w-full"
-                  />
+                  <div className="mt-2 w-full h-64 bg-gray-100 rounded flex items-center justify-center">
+                    <div className="text-center">
+                      <svg className="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <p className="mt-2 text-sm text-gray-500">No video available</p>
+                      <p className="text-xs text-gray-400">Upload a video or connect to CCTV stream</p>
+                    </div>
+                  </div>
                 )}
               </>
             )}

@@ -50,6 +50,9 @@ export default function RootLayout({
                       <span style={{ color: 'red', fontSize: '12px' }}>●</span>
                     </div>
                   </div>
+                  <Link href="/info" className="block text-white hover:text-brand-orange transition-colors duration-200">
+                    Info & User Guide
+                  </Link>
                 </nav>
               </div>
             </div>
