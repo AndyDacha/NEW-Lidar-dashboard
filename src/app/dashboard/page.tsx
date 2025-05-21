@@ -1060,15 +1060,6 @@ export default function Dashboard() {
         >
           Last Update: {mounted ? lastUpdate : ""}
         </button>
-        <button
-          onClick={() => {
-            document.cookie = 'auth=; Max-Age=0; path=/';
-            window.location.href = '/login';
-          }}
-          className="bg-brand-grey hover:bg-gray-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Logout
-        </button>
       </div>
 
       {/* Live Occupancy, Cardio Area, and Free Weights Area Gauges Side by Side */}
