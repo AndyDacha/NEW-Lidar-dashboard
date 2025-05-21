@@ -1,24 +1,23 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const returnTo = searchParams.get('returnTo') || '/dashboard';
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (username === "Dacha2025LIDAR" && password === "D4ch4LIDARLAR4337$") {
-      // Set auth cookie with proper attributes
-      document.cookie = "auth=true; path=/; max-age=86400; SameSite=Strict; secure";
-      router.push(returnTo);
+    // Simple authentication - replace with your actual auth logic
+    if (username === "admin" && password === "admin123") {
+      // Set auth cookie
+      document.cookie = "auth=true; path=/";
+      router.push("/dashboard");
     } else {
-      setError("Invalid credentials");
+      setError("Invalid username or password");
     }
   };
 
