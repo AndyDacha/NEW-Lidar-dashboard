@@ -39,6 +39,9 @@ export default function Sidebar() {
             <Link href="/info" className="block text-white hover:text-brand-orange transition-colors duration-200">
               Info & User Guide
             </Link>
+            <Link href="/user-log" className="block text-white hover:text-brand-orange transition-colors duration-200">
+              User Log & Audit Trail
+            </Link>
           </nav>
         </div>
       </div>
