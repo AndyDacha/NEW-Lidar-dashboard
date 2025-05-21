@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useCallback } from "react";
-import mqtt from "mqtt";
 import {
   Chart as ChartJS,
   Tooltip,
@@ -364,181 +363,193 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    const client = mqtt.connect("wss://navyalkali-710f05f8.a01.euc1.aws.hivemq.cloud:8884/mqtt", {
-      username: "AndyF",
-      password: "Flasheye123",
-      clientId: "dashboard-client-modern",
-      protocol: "wss"
-    });
-
-    client.on("connect", () => {
-      console.log('MQTT Connected successfully');
-      client.subscribe("Flasheye/flasheye-edge-35/event");
-      client.subscribe("Flasheye/flasheye-edge-35/sensor_diagnostics");
-      client.subscribe("Flasheye/flasheye-edge-35/boxes");
-      client.subscribe("Flasheye/flasheye-edge-35/alarm");
-      client.subscribe("Flasheye/flasheye-edge-35/tracking");
-      client.subscribe("Flasheye/flasheye-edge-35/speed_event");
-    });
-
-    client.on("error", (err) => {
-      console.error('MQTT Connection error:', err);
-    });
-
-    client.on("close", () => {
-      console.log('MQTT Connection closed');
-    });
-
-    client.on("offline", () => {
-      console.log('MQTT Client went offline');
-    });
-
-    client.on("message", (topic, message) => {
+    let client: any;
+    const connectMQTT = async () => {
       try {
-        const parsed = JSON.parse(message.toString());
-        setLastUpdate(new Date().toTimeString().slice(0,8));
+        const mqtt = await import('mqtt');
+        client = mqtt.connect("wss://navyalkali-710f05f8.a01.euc1.aws.hivemq.cloud:8884/mqtt", {
+          username: "AndyF",
+          password: "Flasheye123",
+          clientId: "dashboard-client-modern",
+          protocol: "wss"
+        });
 
-        // Update unstaffed hours count if activity is detected during unstaffed hours
-        if (isUnstaffedHours() && (topic.includes("event") || topic.includes("tracking")) && parsed.object_class) {
-          setUnstaffedHoursCount(prev => ({
-            count: prev.count + 1,
-            lastUpdate: new Date().toTimeString().slice(0,8)
-          }));
-        }
+        client.on("connect", () => {
+          console.log('MQTT Connected successfully');
+          client.subscribe("Flasheye/flasheye-edge-35/event");
+          client.subscribe("Flasheye/flasheye-edge-35/sensor_diagnostics");
+          client.subscribe("Flasheye/flasheye-edge-35/boxes");
+          client.subscribe("Flasheye/flasheye-edge-35/alarm");
+          client.subscribe("Flasheye/flasheye-edge-35/tracking");
+          client.subscribe("Flasheye/flasheye-edge-35/speed_event");
+        });
 
-        // Debug log for all incoming messages
-        console.log('[MQTT]', topic, parsed);
+        client.on("error", (err: any) => {
+          console.error('MQTT Connection error:', err);
+        });
 
-        if (topic.includes("sensor_diagnostics")) {
-          const sensorId = parsed.sensor_namespace;
-          if (sensorId) {
-            setSensorStatus((prev) => ({ ...prev, [sensorId]: true }));
-          }
-        }
+        client.on("close", () => {
+          console.log('MQTT Connection closed');
+        });
 
-        if ((topic.includes("event") || topic.includes("alarm")) && parsed.zone_name && parsed.object_class) {
-          const activity: ZoneActivity = {
-            zoneName: parsed.zone_name,
-            objectClass: parsed.object_class,
-            objectId: parsed.object_id,
-            event: parsed.event || "unknown",
-            time: new Date().toTimeString().slice(0,8)
-          };
+        client.on("offline", () => {
+          console.log('MQTT Client went offline');
+        });
 
-          setZoneActivity((prev) => {
-            const filtered = prev.filter(
-              (a) => !(a.zoneName === activity.zoneName && a.objectId === activity.objectId)
-            );
-            return [activity, ...filtered.slice(0, 999)]; // Keep last 1000 activities
-          });
+        client.on("message", (topic: string, message: any) => {
+          try {
+            const parsed = JSON.parse(message.toString());
+            setLastUpdate(new Date().toTimeString().slice(0,8));
 
-          setObjectCounts((prev) => ({
-            ...prev,
-            [parsed.zone_name]: (prev[parsed.zone_name] || 0) + 1
-          }));
-
-          setObjectTypeCounts(prev => {
-            const newCounts = { ...prev };
-            if (!newCounts[parsed.zone_name]) {
-              newCounts[parsed.zone_name] = {};
+            // Update unstaffed hours count if activity is detected during unstaffed hours
+            if (isUnstaffedHours() && (topic.includes("event") || topic.includes("tracking")) && parsed.object_class) {
+              setUnstaffedHoursCount(prev => ({
+                count: prev.count + 1,
+                lastUpdate: new Date().toTimeString().slice(0,8)
+              }));
             }
-            newCounts[parsed.zone_name][parsed.object_class] = 
-              (newCounts[parsed.zone_name][parsed.object_class] || 0) + 1;
-            return newCounts;
-          });
-        }
 
-        if (parsed.zone_name && parsed.detection_value !== undefined) {
-          const zone = parsed.zone_name;
-          const value = parsed.detection_value;
+            // Debug log for all incoming messages
+            console.log('[MQTT]', topic, parsed);
 
-          setObjectPresence((prev) => ({
-            ...prev,
-            [zone]: value === 1 ? 1 : prev[zone] || 0
-          }));
-        }
-
-        if (topic.includes("boxes") && parsed.box) {
-          const simplifiedBoxes: Box[] = parsed.box
-            .filter((b: any) => b.id !== 33 && b.id !== 35) // Exclude Zone ID33
-            .map((b: any) => ({
-              name: b.name || `ID ${b.id}`,
-              dimensions: {
-                x: b.dimensions_x,
-                y: b.dimensions_y,
-                z: b.dimensions_z
-              },
-              position: {
-                x: b.position_x,
-                y: b.position_y,
-                z: b.position_z
+            if (topic.includes("sensor_diagnostics")) {
+              const sensorId = parsed.sensor_namespace;
+              if (sensorId) {
+                setSensorStatus((prev) => ({ ...prev, [sensorId]: true }));
               }
-            }));
-          setBoxData(simplifiedBoxes);
-        }
-
-        if (topic.includes("alarm")) {
-          const alarm: AlarmEvent = {
-            zoneName: parsed.zone_name || "Unknown Zone",
-            objectClass: parsed.object_class || "Unknown Object",
-            objectId: parsed.object_id || "Unknown ID",
-            event: parsed.event || "Unknown Event",
-            time: new Date().toTimeString().slice(0,8),
-            severity: parsed.severity || "medium",
-            details: parsed.details || "No additional details"
-          };
-
-          setAlarmEvents(prev => [{
-            zoneName: parsed.zone_name || "Unknown Zone",
-            objectClass: parsed.object_class || "Unknown Object",
-            objectId: parsed.object_id || "Unknown ID",
-            event: parsed.event || "Unknown Event",
-            time: new Date().toTimeString().slice(0,8),
-            severity: parsed.severity || "medium",
-            details: parsed.details || "No additional details"
-          }, ...prev.slice(0, 9)]);
-        }
-
-        if (topic.includes("tracking")) {
-          const tracking: TrackingEvent = {
-            objectId: parsed.object_id || "Unknown ID",
-            objectClass: parsed.object_class || "Unknown Object",
-            zoneName: parsed.zone_name,
-            position: parsed.position || (parsed.x !== undefined && parsed.y !== undefined && parsed.z !== undefined ? { x: parsed.x, y: parsed.y, z: parsed.z } : undefined),
-            time: new Date().toTimeString().slice(0,8),
-            ...parsed
-          };
-          setTrackingEvents(prev => [{
-            objectId: parsed.object_id || "Unknown ID",
-            objectClass: parsed.object_class || "Unknown Object",
-            zoneName: parsed.zone_name,
-            position: parsed.position || (parsed.x !== undefined && parsed.y !== undefined && parsed.z !== undefined ? { x: parsed.x, y: parsed.y, z: parsed.z } : undefined),
-            time: new Date().toTimeString().slice(0,8),
-            ...parsed
-          }, ...prev.slice(0, 9)]);
-        }
-
-        // Member Tracking: speed_event (primary), event/tracking (fallback)
-        if ((topic.includes("speed_event") || topic.includes("event") || topic.includes("tracking")) && parsed.object_id && parsed.zone_name) {
-          setMemberPaths(prev => {
-            const prevPath = prev[parsed.object_id] || [];
-            if (prevPath.length === 0 || prevPath[prevPath.length - 1].zone !== parsed.zone_name) {
-              return {
-                ...prev,
-                [parsed.object_id]: [...prevPath, { zone: parsed.zone_name, time: new Date().toTimeString().slice(0,8), objectClass: parsed.object_class }].slice(-10)
-              };
             }
-            return prev;
-          });
-        }
 
-      } catch (e) {
-        console.error("Invalid JSON", e);
+            if ((topic.includes("event") || topic.includes("alarm")) && parsed.zone_name && parsed.object_class) {
+              const activity: ZoneActivity = {
+                zoneName: parsed.zone_name,
+                objectClass: parsed.object_class,
+                objectId: parsed.object_id,
+                event: parsed.event || "unknown",
+                time: new Date().toTimeString().slice(0,8)
+              };
+
+              setZoneActivity((prev) => {
+                const filtered = prev.filter(
+                  (a) => !(a.zoneName === activity.zoneName && a.objectId === activity.objectId)
+                );
+                return [activity, ...filtered.slice(0, 999)]; // Keep last 1000 activities
+              });
+
+              setObjectCounts((prev) => ({
+                ...prev,
+                [parsed.zone_name]: (prev[parsed.zone_name] || 0) + 1
+              }));
+
+              setObjectTypeCounts(prev => {
+                const newCounts = { ...prev };
+                if (!newCounts[parsed.zone_name]) {
+                  newCounts[parsed.zone_name] = {};
+                }
+                newCounts[parsed.zone_name][parsed.object_class] = 
+                  (newCounts[parsed.zone_name][parsed.object_class] || 0) + 1;
+                return newCounts;
+              });
+            }
+
+            if (parsed.zone_name && parsed.detection_value !== undefined) {
+              const zone = parsed.zone_name;
+              const value = parsed.detection_value;
+
+              setObjectPresence((prev) => ({
+                ...prev,
+                [zone]: value === 1 ? 1 : prev[zone] || 0
+              }));
+            }
+
+            if (topic.includes("boxes") && parsed.box) {
+              const simplifiedBoxes: Box[] = parsed.box
+                .filter((b: any) => b.id !== 33 && b.id !== 35) // Exclude Zone ID33
+                .map((b: any) => ({
+                  name: b.name || `ID ${b.id}`,
+                  dimensions: {
+                    x: b.dimensions_x,
+                    y: b.dimensions_y,
+                    z: b.dimensions_z
+                  },
+                  position: {
+                    x: b.position_x,
+                    y: b.position_y,
+                    z: b.position_z
+                  }
+                }));
+              setBoxData(simplifiedBoxes);
+            }
+
+            if (topic.includes("alarm")) {
+              const alarm: AlarmEvent = {
+                zoneName: parsed.zone_name || "Unknown Zone",
+                objectClass: parsed.object_class || "Unknown Object",
+                objectId: parsed.object_id || "Unknown ID",
+                event: parsed.event || "Unknown Event",
+                time: new Date().toTimeString().slice(0,8),
+                severity: parsed.severity || "medium",
+                details: parsed.details || "No additional details"
+              };
+
+              setAlarmEvents(prev => [{
+                zoneName: parsed.zone_name || "Unknown Zone",
+                objectClass: parsed.object_class || "Unknown Object",
+                objectId: parsed.object_id || "Unknown ID",
+                event: parsed.event || "Unknown Event",
+                time: new Date().toTimeString().slice(0,8),
+                severity: parsed.severity || "medium",
+                details: parsed.details || "No additional details"
+              }, ...prev.slice(0, 9)]);
+            }
+
+            if (topic.includes("tracking")) {
+              const tracking: TrackingEvent = {
+                objectId: parsed.object_id || "Unknown ID",
+                objectClass: parsed.object_class || "Unknown Object",
+                zoneName: parsed.zone_name,
+                position: parsed.position || (parsed.x !== undefined && parsed.y !== undefined && parsed.z !== undefined ? { x: parsed.x, y: parsed.y, z: parsed.z } : undefined),
+                time: new Date().toTimeString().slice(0,8),
+                ...parsed
+              };
+              setTrackingEvents(prev => [{
+                objectId: parsed.object_id || "Unknown ID",
+                objectClass: parsed.object_class || "Unknown Object",
+                zoneName: parsed.zone_name,
+                position: parsed.position || (parsed.x !== undefined && parsed.y !== undefined && parsed.z !== undefined ? { x: parsed.x, y: parsed.y, z: parsed.z } : undefined),
+                time: new Date().toTimeString().slice(0,8),
+                ...parsed
+              }, ...prev.slice(0, 9)]);
+            }
+
+            // Member Tracking: speed_event (primary), event/tracking (fallback)
+            if ((topic.includes("speed_event") || topic.includes("event") || topic.includes("tracking")) && parsed.object_id && parsed.zone_name) {
+              setMemberPaths(prev => {
+                const prevPath = prev[parsed.object_id] || [];
+                if (prevPath.length === 0 || prevPath[prevPath.length - 1].zone !== parsed.zone_name) {
+                  return {
+                    ...prev,
+                    [parsed.object_id]: [...prevPath, { zone: parsed.zone_name, time: new Date().toTimeString().slice(0,8), objectClass: parsed.object_class }].slice(-10)
+                  };
+                }
+                return prev;
+              });
+            }
+
+          } catch (e) {
+            console.error("Invalid JSON", e);
+          }
+        });
+      } catch (error) {
+        console.error('Failed to initialize MQTT:', error);
       }
-    });
+    };
+
+    connectMQTT();
 
     return () => {
-      client.end();
+      if (client) {
+        client.end();
+      }
     };
   }, []);
 
