@@ -364,10 +364,15 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    const client = mqtt.connect("wss://navyalkali-710f05f8.a01.euc1.aws.hivemq.cloud:8884/mqtt", {
-      username: "AndyF",
-      password: "Flasheye123",
-      clientId: "dashboard-client-modern",
+    const brokerUrl = process.env.NEXT_PUBLIC_MQTT_BROKER_URL || "";
+    const mqttUsername = process.env.NEXT_PUBLIC_MQTT_USERNAME;
+    const mqttPassword = process.env.NEXT_PUBLIC_MQTT_PASSWORD;
+    const mqttClientId = process.env.NEXT_PUBLIC_MQTT_CLIENT_ID || "dashboard-client-modern";
+
+    const client = mqtt.connect(brokerUrl, {
+      username: mqttUsername,
+      password: mqttPassword,
+      clientId: mqttClientId,
       protocol: "wss"
     });
 
@@ -1154,7 +1159,7 @@ export default function Dashboard() {
         <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 ${
           objectPresence['Fire Exit'] 
             ? 'bg-red-500 text-white border-red-600' 
-            : 'bg-green-500 text-white border-green-600'
+            : 'bg-green-500 text-brand-grey border-green-600'
         } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
           <h2 className="text-xl font-bold">Fire Exit Alert</h2>
           <p className="text-lg mt-2">
@@ -1162,40 +1167,27 @@ export default function Dashboard() {
           </p>
         </div>
         {/* Gym Car Park Alert */}
-        {(() => {
-          const carParkCount = objectCounts['Gym Car Park'] || 0;
-          let recentObject = null;
-          for (const activity of zoneActivity) {
-            if (activity.zoneName === 'Gym Car Park') {
-              recentObject = activity.objectClass;
-              break;
-            }
-          }
-          const capitalizedObject = recentObject ? (recentObject.charAt(0).toUpperCase() + recentObject.slice(1)) : null;
-          return (
-            <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4
-              ${carParkCount >= 200
-                ? 'bg-red-500 text-white border-red-600 flashing-alert'
-                : carParkCount >= 1
-                  ? 'bg-yellow-400 text-black border-yellow-600'
-                  : 'bg-green-500 text-white border-green-600'}
-              border-brand-orange min-h-[120px] flex flex-col justify-center`}>
-              <h2 className="text-xl font-bold">Gym Car Park Alert</h2>
-              <p className="text-lg mt-2">
-                {carParkCount >= 200
-                  ? 'CAR PARK FULL'
-                  : carParkCount >= 1
-                    ? (capitalizedObject ? `${capitalizedObject} Detected in Gym Car Park` : 'Object Detected in Gym Car Park')
-                    : 'No Members Detected'}
-              </p>
-            </div>
-          );
-        })()}
+        <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 ${
+          (objectCounts['Gym Car Park'] || 0) >= 200
+            ? 'bg-red-500 text-white border-red-600 flashing-alert'
+            : (objectCounts['Gym Car Park'] || 0) >= 1
+              ? 'bg-yellow-400 text-black border-yellow-600'
+              : 'bg-green-500 text-brand-grey border-green-600'
+        } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
+          <h2 className="text-xl font-bold">Gym Car Park Alert</h2>
+          <p className="text-lg mt-2">
+            {(objectCounts['Gym Car Park'] || 0) >= 200
+              ? 'CAR PARK FULL'
+              : (objectCounts['Gym Car Park'] || 0) >= 1
+                ? 'Car Detected in Gym Car Park'
+                : 'No Members Detected'}
+          </p>
+        </div>
         {/* Male Changing Alert */}
         <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 ${
           objectPresence['Male Changing'] 
             ? 'bg-red-500 text-white border-red-600' 
-            : 'bg-green-500 text-white border-green-600'
+            : 'bg-green-500 text-brand-grey border-green-600'
         } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
           <h2 className="text-xl font-bold">Male Changing</h2>
           <p className="text-lg mt-2">
@@ -1206,7 +1198,7 @@ export default function Dashboard() {
         <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 ${
           objectPresence['Female Changing'] 
             ? 'bg-red-500 text-white border-red-600' 
-            : 'bg-green-500 text-white border-green-600'
+            : 'bg-green-500 text-brand-grey border-green-600'
         } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
           <h2 className="text-xl font-bold">Female Changing</h2>
           <p className="text-lg mt-2">
@@ -1217,7 +1209,7 @@ export default function Dashboard() {
         <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 ${
           objectPresence['Comms Room'] 
             ? 'bg-red-500 text-white border-red-600' 
-            : 'bg-green-500 text-white border-green-600'
+            : 'bg-green-500 text-brand-grey border-green-600'
         } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
           <h2 className="text-xl font-bold">Comms Room</h2>
           <p className="text-lg mt-2">
