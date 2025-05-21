@@ -35,7 +35,7 @@ export default function UserLogPage() {
             <tbody>
               {logs.map((log, idx) => (
                 <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                  <td className="px-4 py-2 text-sm text-gray-800">{log.timestamp}</td>
+                  <td className="px-4 py-2 text-sm text-gray-800">{new Date(log.timestamp).toLocaleString()}</td>
                   <td className="px-4 py-2 text-sm text-gray-800">{log.user}</td>
                   <td className={`px-4 py-2 text-sm font-medium ${log.action && log.action.includes("Failure") ? "text-red-600" : log.action && log.action.includes("Success") ? "text-green-600" : "text-gray-800"}`}>{log.action}</td>
                   <td className="px-4 py-2 text-sm text-gray-800">{log.ip}</td>
