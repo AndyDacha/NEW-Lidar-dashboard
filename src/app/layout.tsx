@@ -42,6 +42,14 @@ export default function RootLayout({
                   <Link href="/site-drawing" className="block text-white hover:text-brand-orange transition-colors duration-200">
                     Site Drawings & Video
                   </Link>
+                  <div className="flex items-center gap-2">
+                    <Link href="/mqtt-log" className="block text-white hover:text-brand-orange transition-colors duration-200">
+                      MQTT Log & Status
+                    </Link>
+                    <div id="mqtt-status-indicator" className="ml-2">
+                      <span style={{ color: 'red', fontSize: '12px' }}>●</span>
+                    </div>
+                  </div>
                 </nav>
               </div>
             </div>

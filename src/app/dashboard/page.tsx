@@ -160,98 +160,43 @@ function isEquipmentStatusExcluded(box: Box) {
 }
 
 export default function Dashboard() {
-  // Initialize all state variables with localStorage values
-  const [attendance, setAttendance] = useState<number>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('attendance');
-      return stored ? parseInt(stored, 10) : 0;
-    }
-    return 0;
-  });
-
-  const [objectCounts, setObjectCounts] = useState<Record<string, number>>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('objectCounts');
-      return stored ? JSON.parse(stored) : {};
-    }
-    return {};
-  });
-
-  const [zoneActivity, setZoneActivity] = useState<any[]>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('zoneActivity');
-      return stored ? JSON.parse(stored) : [];
-    }
-    return [];
-  });
-
-  const [lastUpdate, setLastUpdate] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('lastUpdate') || 'Never';
-    }
-    return 'Never';
-  });
-
+  const [isClient, setIsClient] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [attendance, setAttendance] = useState<number>(0);
+  const [objectCounts, setObjectCounts] = useState<Record<string, number>>({});
+  const [zoneActivity, setZoneActivity] = useState<any[]>([]);
+  const [lastUpdate, setLastUpdate] = useState<string>("");
   const [sensorStatus, setSensorStatus] = useState<SensorStatus>({});
   const [objectPresence, setObjectPresence] = useState<ObjectPresence>({});
   const [boxData, setBoxData] = useState<Box[]>([]);
-  const [objectTypeCounts, setObjectTypeCounts] = useState<ObjectTypeCount>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('objectTypeCounts');
-      return stored ? JSON.parse(stored) : {};
-    }
-    return {};
-  });
+  const [objectTypeCounts, setObjectTypeCounts] = useState<ObjectTypeCount>({});
   const [alarmEvents, setAlarmEvents] = useState<AlarmEvent[]>([]);
   const [trackingEvents, setTrackingEvents] = useState<TrackingEvent[]>([]);
-  const [memberPaths, setMemberPaths] = useState<MemberPath>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('memberPaths');
-      return stored ? JSON.parse(stored) : {};
-    }
-    return {};
-  });
+  const [memberPaths, setMemberPaths] = useState<MemberPath>({});
   const [uploadedVideos, setUploadedVideos] = useState<(File | null)[]>([null, null, null, null]);
   const [videoUrls, setVideoUrls] = useState<(string | null)[]>([null, null, null, null]);
   const [videoErrors, setVideoErrors] = useState<(string | null)[]>([null, null, null, null]);
   const [cctvCredentials, setCctvCredentials] = useState({ username: '', password: '' });
   const [showCctvLogin, setShowCctvLogin] = useState(false);
   const [unstaffedHoursCount, setUnstaffedHoursCount] = useState<UnstaffedHoursCount>({ count: 0, lastUpdate: '' });
-  // Weather state
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [simulateFreeWeights, setSimulateFreeWeights] = useState(false);
   const [simulateDefib, setSimulateDefib] = useState(false);
+  const [showFreeWeightsAlert, setShowFreeWeightsAlert] = useState<boolean>(false);
+  const [showWeatherAlert, setShowWeatherAlert] = useState<boolean>(false);
+  const [showLastUpdateAlert, setShowLastUpdateAlert] = useState<boolean>(false);
+  const [mounted, setMounted] = useState(false);
+  const [showAlerts, setShowAlerts] = useState(true);
+  const [ballAlert, setBallAlert] = useState(false);
 
-  // --- Emergency Email Notification Logic ---
-  const [lastAlertTimes, setLastAlertTimes] = useState<{ [key: string]: number }>({});
+  const isUnstaffedHours = () => {
+    const now = new Date();
+    const day = now.getDay();
+    const hour = now.getHours();
+    return day === 0 || (day === 6 && hour >= 12) || hour < 6 || hour >= 22;
+  };
 
-  // --- Free Weights Left Out Alert Logic ---
-  const freeWeightsLeftOutCount = zoneActivity.filter(activity => activity.objectClass && activity.objectClass.toLowerCase() === 'ball').length;
-
-  const totalDevices = Object.keys(sensorStatus).length;
-  const totalZones = boxData.length;
-  const totalObjects = Object.values(objectCounts).reduce((sum: number, count: number) => sum + count, 0);
-
-  // Members count: only count unique objectIds where objectClass is 'human' or 'person'
-  const memberIds = new Set(zoneActivity.filter(a => a.objectClass && ['human', 'person'].includes(a.objectClass.toLowerCase())).map(a => a.objectId));
-  const totalMembers = memberIds.size;
-  // Vehicles count: only count unique objectIds where objectClass is 'car' or 'truck'
-  const vehicleIds = new Set(zoneActivity.filter(a => a.objectClass && ['car', 'truck'].includes(a.objectClass.toLowerCase())).map(a => a.objectId));
-  const totalVehicles = vehicleIds.size;
-
-  // Update localStorage whenever state changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('attendance', attendance.toString());
-      localStorage.setItem('objectCounts', JSON.stringify(objectCounts));
-      localStorage.setItem('zoneActivity', JSON.stringify(zoneActivity));
-      localStorage.setItem('lastUpdate', lastUpdate);
-      localStorage.setItem('memberPaths', JSON.stringify(memberPaths));
-      localStorage.setItem('objectTypeCounts', JSON.stringify(objectTypeCounts));
-    }
-  }, [attendance, objectCounts, zoneActivity, lastUpdate, memberPaths, objectTypeCounts]);
-
-  // Update the handleObjectDetection function to work with persisted data
+  // Move handleObjectDetection here with other hooks
   const handleObjectDetection = useCallback((data: any) => {
     if (!data || !data.objects) return;
 
@@ -289,22 +234,386 @@ export default function Dashboard() {
     }
   }, []);
 
-  async function sendEmergencyEmail(subject: string, message: string) {
-    try {
-      await fetch('/api/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: 'andy@dacha-uk.com',
-          subject,
-          text: message,
-        }),
-      });
-    } catch (err) {
-      console.error('Failed to send emergency email:', err);
-    }
-  }
+  // Helper functions for weather codes
+  const weatherCodeToDesc = (code: number) => {
+    const map: { [key: number]: string } = {
+      0: 'Clear', 1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
+      45: 'Fog', 48: 'Depositing Rime Fog', 51: 'Light Drizzle', 53: 'Drizzle', 55: 'Dense Drizzle',
+      56: 'Freezing Drizzle', 57: 'Freezing Drizzle', 61: 'Slight Rain', 63: 'Rain', 65: 'Heavy Rain',
+      66: 'Freezing Rain', 67: 'Freezing Rain', 71: 'Slight Snow', 73: 'Snow', 75: 'Heavy Snow',
+      77: 'Snow Grains', 80: 'Slight Showers', 81: 'Showers', 82: 'Violent Showers',
+      85: 'Slight Snow Showers', 86: 'Heavy Snow Showers', 95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Thunderstorm'
+    };
+    return map[code] || 'Unknown';
+  };
 
+  const weatherCodeToIcon = (code: number) => {
+    if ([0, 1].includes(code)) return '☀️';
+    if ([2, 3].includes(code)) return '⛅';
+    if ([45, 48].includes(code)) return '🌫️';
+    if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return '🌧️';
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return '❄️';
+    if ([95, 96, 99].includes(code)) return '⛈️';
+    return '❔';
+  };
+
+  // Function to toggle alerts
+  const toggleAlerts = () => {
+    setShowFreeWeightsAlert(prev => !prev);
+    setShowWeatherAlert(prev => !prev);
+  };
+
+  // Calculate total objects
+  const totalObjects = Object.values(objectCounts).reduce((sum: number, count: number) => sum + count, 0);
+
+  // Calculate other totals
+  const totalDevices = Object.keys(sensorStatus).length;
+  const totalZones = boxData.length;
+  const memberIds = new Set(zoneActivity.filter(a => a.objectClass && ['human', 'person'].includes(a.objectClass.toLowerCase())).map(a => a.objectId));
+  const totalMembers = memberIds.size;
+  const vehicleIds = new Set(zoneActivity.filter(a => a.objectClass && ['car', 'truck'].includes(a.objectClass.toLowerCase())).map(a => a.objectId));
+  const totalVehicles = vehicleIds.size;
+
+  // MQTT message handler
+  const handleMQTTMessage = (topic: string, parsed: any) => {
+    console.log('[MQTT] handleMQTTMessage called with topic:', topic);
+    console.log('[MQTT] handleMQTTMessage parsed data:', parsed);
+
+    if (topic.includes("sensor_diagnostics")) {
+      console.log('[MQTT] Processing sensor diagnostics');
+      const sensorId = parsed.sensor_namespace;
+      if (sensorId) {
+        setSensorStatus((prev) => ({ ...prev, [sensorId]: true }));
+      }
+    }
+
+    if ((topic.includes("event") || topic.includes("alarm")) && parsed.zone_name && parsed.object_class) {
+      console.log('[MQTT] Processing event/alarm');
+      const activity: ZoneActivity = {
+        zoneName: parsed.zone_name,
+        objectClass: parsed.object_class,
+        objectId: parsed.object_id,
+        event: parsed.event || "unknown",
+        time: new Date().toTimeString().slice(0,8)
+      };
+
+      setZoneActivity((prev) => {
+        const filtered = prev.filter(
+          (a) => !(a.zoneName === activity.zoneName && a.objectId === activity.objectId)
+        );
+        return [activity, ...filtered.slice(0, 999)]; // Keep last 1000 activities
+      });
+
+      setObjectCounts((prev) => ({
+        ...prev,
+        [parsed.zone_name]: (prev[parsed.zone_name] || 0) + 1
+      }));
+
+      setObjectTypeCounts(prev => {
+        const newCounts = { ...prev };
+        if (!newCounts[parsed.zone_name]) {
+          newCounts[parsed.zone_name] = {};
+        }
+        newCounts[parsed.zone_name][parsed.object_class] = 
+          (newCounts[parsed.zone_name][parsed.object_class] || 0) + 1;
+        return newCounts;
+      });
+
+      // Trigger ball alert if object_class is 'ball'
+      if (typeof parsed.object_class === 'string' && parsed.object_class.toLowerCase() === 'ball') {
+        setBallAlert(true);
+      }
+    }
+
+    if (parsed.zone_name && parsed.detection_value !== undefined) {
+      console.log('[MQTT] Processing detection value');
+      const zone = parsed.zone_name;
+      const value = parsed.detection_value;
+
+      setObjectPresence((prev) => ({
+        ...prev,
+        [zone]: value === 1 ? 1 : prev[zone] || 0
+      }));
+    }
+
+    if (topic.includes("boxes") && parsed.box) {
+      console.log('[MQTT] Processing boxes data');
+      const simplifiedBoxes: Box[] = parsed.box
+        .filter((b: any) => b.id !== 33 && b.id !== 35) // Exclude Zone ID33
+        .map((b: any) => ({
+          name: b.name || `ID ${b.id}`,
+          dimensions: {
+            x: b.dimensions_x,
+            y: b.dimensions_y,
+            z: b.dimensions_z
+          },
+          position: {
+            x: b.position_x,
+            y: b.position_y,
+            z: b.position_z
+          }
+        }));
+      setBoxData(simplifiedBoxes);
+    }
+
+    if (topic.includes("alarm")) {
+      const alarm: AlarmEvent = {
+        zoneName: parsed.zone_name || "Unknown Zone",
+        objectClass: parsed.object_class || "Unknown Object",
+        objectId: parsed.object_id || "Unknown ID",
+        event: parsed.event || "Unknown Event",
+        time: new Date().toTimeString().slice(0,8),
+        severity: parsed.severity || "medium",
+        details: parsed.details || "No additional details"
+      };
+
+      setAlarmEvents(prev => [alarm, ...prev.slice(0, 9)]);
+    }
+
+    if (topic.includes("tracking")) {
+      const tracking: TrackingEvent = {
+        objectId: parsed.object_id || "Unknown ID",
+        objectClass: parsed.object_class || "Unknown Object",
+        zoneName: parsed.zone_name,
+        position: parsed.position || (parsed.x !== undefined && parsed.y !== undefined && parsed.z !== undefined ? { x: parsed.x, y: parsed.y, z: parsed.z } : undefined),
+        time: new Date().toTimeString().slice(0,8),
+        ...parsed
+      };
+      setTrackingEvents(prev => [tracking, ...prev.slice(0, 9)]);
+    }
+
+    // Member Tracking: speed_event (primary), event/tracking (fallback)
+    if ((topic.includes("speed_event") || topic.includes("event") || topic.includes("tracking")) && parsed.object_id && parsed.zone_name) {
+      setMemberPaths(prev => {
+        const prevPath = prev[parsed.object_id] || [];
+        if (prevPath.length === 0 || prevPath[prevPath.length - 1].zone !== parsed.zone_name) {
+          return {
+            ...prev,
+            [parsed.object_id]: [...prevPath, { zone: parsed.zone_name, time: new Date().toTimeString().slice(0,8), objectClass: parsed.object_class }].slice(-10)
+          };
+        }
+        return prev;
+      });
+    }
+  };
+
+  // Initialize client-side state
+  useEffect(() => {
+    setIsClient(true);
+    setMounted(true);
+  }, []);
+
+  // Load initial state from localStorage
+  useEffect(() => {
+    if (!isClient) return;
+
+    const storedAttendance = localStorage.getItem('attendance');
+    const storedObjectCounts = localStorage.getItem('objectCounts');
+    const storedZoneActivity = localStorage.getItem('zoneActivity');
+    const storedLastUpdate = localStorage.getItem('lastUpdate');
+    const storedObjectTypeCounts = localStorage.getItem('objectTypeCounts');
+    const storedMemberPaths = localStorage.getItem('memberPaths');
+
+    if (storedAttendance) setAttendance(parseInt(storedAttendance, 10));
+    if (storedObjectCounts) setObjectCounts(JSON.parse(storedObjectCounts));
+    if (storedZoneActivity) setZoneActivity(JSON.parse(storedZoneActivity));
+    if (storedLastUpdate) setLastUpdate(storedLastUpdate);
+    if (storedObjectTypeCounts) setObjectTypeCounts(JSON.parse(storedObjectTypeCounts));
+    if (storedMemberPaths) setMemberPaths(JSON.parse(storedMemberPaths));
+    
+    setIsLoading(false);
+  }, [isClient]);
+
+  // Update localStorage whenever state changes
+  useEffect(() => {
+    if (!isClient) return;
+
+    localStorage.setItem('attendance', attendance.toString());
+    localStorage.setItem('objectCounts', JSON.stringify(objectCounts));
+    localStorage.setItem('zoneActivity', JSON.stringify(zoneActivity));
+    localStorage.setItem('lastUpdate', lastUpdate);
+    localStorage.setItem('memberPaths', JSON.stringify(memberPaths));
+    localStorage.setItem('objectTypeCounts', JSON.stringify(objectTypeCounts));
+  }, [isClient, attendance, objectCounts, zoneActivity, lastUpdate, memberPaths, objectTypeCounts]);
+
+  // MQTT connection setup
+  useEffect(() => {
+    if (!isClient) return;
+
+    let client: any;
+    let reconnectTimeout: NodeJS.Timeout;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 5;
+    const RECONNECT_DELAY = 5000;
+
+    const setStatus = (status: "online" | "offline") => {
+      if (typeof window !== "undefined") {
+        console.log(`[MQTT] Status set to: ${status}`);
+        window.dispatchEvent(new CustomEvent("mqtt-status", { detail: status }));
+        localStorage.setItem("mqttStatus", status);
+        const el = document.getElementById("mqtt-status-indicator");
+        if (el) {
+          el.innerHTML = status === "online"
+            ? '<span style="color:green;font-size:12px;">●</span>'
+            : '<span style="color:red;font-size:12px;">●</span>';
+        }
+      }
+    };
+
+    const connectMQTT = async () => {
+      try {
+        console.log('[MQTT] Attempting to connect to MQTT broker...');
+        const mqtt = (await import('mqtt')).default;
+        
+        const clientId = `dashboard-client-${Date.now()}`;
+        
+        console.log('[MQTT] Connecting with client ID:', clientId);
+        client = mqtt.connect("wss://navyalkali-710f05f8.a01.euc1.aws.hivemq.cloud:8884/mqtt", {
+          username: "AndyF",
+          password: "Flasheye123",
+          clientId: clientId,
+          protocol: "wss",
+          clean: true,
+          reconnectPeriod: 0
+        });
+
+        client.on("connect", () => {
+          console.log('[MQTT] Connected successfully to broker');
+          setStatus("online");
+          reconnectAttempts = 0;
+          
+          const topics = [
+            "Flasheye/flasheye-edge-35/event",
+            "Flasheye/flasheye-edge-35/sensor_diagnostics",
+            "Flasheye/flasheye-edge-35/boxes",
+            "Flasheye/flasheye-edge-35/alarm",
+            "Flasheye/flasheye-edge-35/tracking",
+            "Flasheye/flasheye-edge-35/speed_event"
+          ];
+          
+          console.log('[MQTT] Subscribing to topics:', topics);
+          topics.forEach(topic => {
+            client.subscribe(topic, (err: any) => {
+              if (err) {
+                console.error(`[MQTT] Failed to subscribe to ${topic}:`, err);
+              } else {
+                console.log(`[MQTT] Successfully subscribed to ${topic}`);
+              }
+            });
+          });
+        });
+
+        client.on("error", (err: any) => {
+          console.error('[MQTT] Connection error:', err);
+          setStatus("offline");
+          handleReconnect();
+        });
+
+        client.on("close", () => {
+          console.log('[MQTT] Connection closed');
+          setStatus("offline");
+          handleReconnect();
+        });
+
+        client.on("offline", () => {
+          console.log('[MQTT] Client went offline');
+          setStatus("offline");
+          handleReconnect();
+        });
+
+        client.on("message", (topic: string, message: any) => {
+          console.log(`[MQTT] Message received on topic: ${topic}`);
+          console.log(`[MQTT] Raw message:`, message.toString());
+          try {
+            const parsed = JSON.parse(message.toString());
+            console.log('[MQTT] Parsed message:', parsed);
+
+            // Update lastUpdate for non-sensor_diagnostics messages
+            if (!topic.includes('sensor_diagnostics')) {
+              const newTime = new Date().toTimeString().slice(0,8);
+              setLastUpdate(newTime);
+
+              if (isUnstaffedHours() && (topic.includes("event") || topic.includes("tracking")) && parsed.object_class) {
+                console.log('[MQTT] Unstaffed hours detection:', parsed);
+                setUnstaffedHoursCount(prev => ({
+                  count: prev.count + 1,
+                  lastUpdate: newTime
+                }));
+              }
+            }
+
+            // Handle different message types
+            console.log('[MQTT] Processing message with handleMQTTMessage');
+            handleMQTTMessage(topic, parsed);
+          } catch (e) {
+            console.error("[MQTT] Error processing message:", e);
+            console.error("[MQTT] Raw message:", message.toString());
+          }
+        });
+
+      } catch (error) {
+        console.error('[MQTT] Failed to initialize MQTT:', error);
+        handleReconnect();
+      }
+    };
+
+    const handleReconnect = () => {
+      if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        console.log(`[MQTT] Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+        
+        if (client) {
+          client.end();
+        }
+        
+        reconnectTimeout = setTimeout(() => {
+          connectMQTT();
+        }, RECONNECT_DELAY);
+      } else {
+        console.error('[MQTT] Max reconnection attempts reached. Please refresh the page.');
+      }
+    };
+
+    connectMQTT();
+
+    return () => {
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (client) {
+        client.end();
+      }
+      setStatus("offline");
+    };
+  }, [isClient]);
+
+  // Weather data fetch
+  useEffect(() => {
+    if (!isClient) return;
+
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=50.846&longitude=-1.788&current_weather=true')
+      .then(res => res.json())
+      .then(data => {
+        if (data.current_weather) {
+          setWeather({
+            temp: data.current_weather.temperature,
+            description: data.current_weather.weathercode ? weatherCodeToDesc(data.current_weather.weathercode) : '',
+            icon: weatherCodeToIcon(data.current_weather.weathercode)
+          });
+        }
+      });
+  }, [isClient]);
+
+  // Clean up video URLs (move this above the conditional return)
+  useEffect(() => {
+    return () => {
+      videoUrls.forEach(url => {
+        if (url) URL.revokeObjectURL(url);
+      });
+    };
+  }, [videoUrls]);
+
+  // useEffect for alerts (was after conditional return, move it up)
   useEffect(() => {
     const now = Date.now();
     const alertWindow = 5 * 60 * 1000; // 5 minutes
@@ -347,220 +656,30 @@ export default function Dashboard() {
     }
 
     alerts.forEach(alert => {
-      if (!lastAlertTimes[alert.key] || now - lastAlertTimes[alert.key] > alertWindow) {
-        sendEmergencyEmail(alert.subject, alert.message);
-        setLastAlertTimes(prev => ({ ...prev, [alert.key]: now }));
-      }
+      sendEmergencyEmail(alert.subject, alert.message);
     });
     // eslint-disable-next-line
   }, [objectPresence, objectCounts, totalObjects]);
 
-  // Add function to check if current time is in unstaffed hours
-  const isUnstaffedHours = () => {
-    const now = new Date();
-    const hour = now.getHours();
-    return hour >= 22 || hour < 6;
-  };
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
-  useEffect(() => {
-    let client: any;
-    const connectMQTT = async () => {
-      try {
-        const mqtt = await import('mqtt');
-        client = mqtt.connect("wss://navyalkali-710f05f8.a01.euc1.aws.hivemq.cloud:8884/mqtt", {
-          username: "AndyF",
-          password: "Flasheye123",
-          clientId: "dashboard-client-modern",
-          protocol: "wss"
-        });
-
-        client.on("connect", () => {
-          console.log('MQTT Connected successfully');
-          client.subscribe("Flasheye/flasheye-edge-35/event");
-          client.subscribe("Flasheye/flasheye-edge-35/sensor_diagnostics");
-          client.subscribe("Flasheye/flasheye-edge-35/boxes");
-          client.subscribe("Flasheye/flasheye-edge-35/alarm");
-          client.subscribe("Flasheye/flasheye-edge-35/tracking");
-          client.subscribe("Flasheye/flasheye-edge-35/speed_event");
-        });
-
-        client.on("error", (err: any) => {
-          console.error('MQTT Connection error:', err);
-        });
-
-        client.on("close", () => {
-          console.log('MQTT Connection closed');
-        });
-
-        client.on("offline", () => {
-          console.log('MQTT Client went offline');
-        });
-
-        client.on("message", (topic: string, message: any) => {
-          try {
-            const parsed = JSON.parse(message.toString());
-            setLastUpdate(new Date().toTimeString().slice(0,8));
-
-            // Update unstaffed hours count if activity is detected during unstaffed hours
-            if (isUnstaffedHours() && (topic.includes("event") || topic.includes("tracking")) && parsed.object_class) {
-              setUnstaffedHoursCount(prev => ({
-                count: prev.count + 1,
-                lastUpdate: new Date().toTimeString().slice(0,8)
-              }));
-            }
-
-            // Debug log for all incoming messages
-            console.log('[MQTT]', topic, parsed);
-
-            if (topic.includes("sensor_diagnostics")) {
-              const sensorId = parsed.sensor_namespace;
-              if (sensorId) {
-                setSensorStatus((prev) => ({ ...prev, [sensorId]: true }));
-              }
-            }
-
-            if ((topic.includes("event") || topic.includes("alarm")) && parsed.zone_name && parsed.object_class) {
-              const activity: ZoneActivity = {
-                zoneName: parsed.zone_name,
-                objectClass: parsed.object_class,
-                objectId: parsed.object_id,
-                event: parsed.event || "unknown",
-                time: new Date().toTimeString().slice(0,8)
-              };
-
-              setZoneActivity((prev) => {
-                const filtered = prev.filter(
-                  (a) => !(a.zoneName === activity.zoneName && a.objectId === activity.objectId)
-                );
-                return [activity, ...filtered.slice(0, 999)]; // Keep last 1000 activities
-              });
-
-              setObjectCounts((prev) => ({
-                ...prev,
-                [parsed.zone_name]: (prev[parsed.zone_name] || 0) + 1
-              }));
-
-              setObjectTypeCounts(prev => {
-                const newCounts = { ...prev };
-                if (!newCounts[parsed.zone_name]) {
-                  newCounts[parsed.zone_name] = {};
-                }
-                newCounts[parsed.zone_name][parsed.object_class] = 
-                  (newCounts[parsed.zone_name][parsed.object_class] || 0) + 1;
-                return newCounts;
-              });
-            }
-
-            if (parsed.zone_name && parsed.detection_value !== undefined) {
-              const zone = parsed.zone_name;
-              const value = parsed.detection_value;
-
-              setObjectPresence((prev) => ({
-                ...prev,
-                [zone]: value === 1 ? 1 : prev[zone] || 0
-              }));
-            }
-
-            if (topic.includes("boxes") && parsed.box) {
-              const simplifiedBoxes: Box[] = parsed.box
-                .filter((b: any) => b.id !== 33 && b.id !== 35) // Exclude Zone ID33
-                .map((b: any) => ({
-                  name: b.name || `ID ${b.id}`,
-                  dimensions: {
-                    x: b.dimensions_x,
-                    y: b.dimensions_y,
-                    z: b.dimensions_z
-                  },
-                  position: {
-                    x: b.position_x,
-                    y: b.position_y,
-                    z: b.position_z
-                  }
-                }));
-              setBoxData(simplifiedBoxes);
-            }
-
-            if (topic.includes("alarm")) {
-              const alarm: AlarmEvent = {
-                zoneName: parsed.zone_name || "Unknown Zone",
-                objectClass: parsed.object_class || "Unknown Object",
-                objectId: parsed.object_id || "Unknown ID",
-                event: parsed.event || "Unknown Event",
-                time: new Date().toTimeString().slice(0,8),
-                severity: parsed.severity || "medium",
-                details: parsed.details || "No additional details"
-              };
-
-              setAlarmEvents(prev => [{
-                zoneName: parsed.zone_name || "Unknown Zone",
-                objectClass: parsed.object_class || "Unknown Object",
-                objectId: parsed.object_id || "Unknown ID",
-                event: parsed.event || "Unknown Event",
-                time: new Date().toTimeString().slice(0,8),
-                severity: parsed.severity || "medium",
-                details: parsed.details || "No additional details"
-              }, ...prev.slice(0, 9)]);
-            }
-
-            if (topic.includes("tracking")) {
-              const tracking: TrackingEvent = {
-                objectId: parsed.object_id || "Unknown ID",
-                objectClass: parsed.object_class || "Unknown Object",
-                zoneName: parsed.zone_name,
-                position: parsed.position || (parsed.x !== undefined && parsed.y !== undefined && parsed.z !== undefined ? { x: parsed.x, y: parsed.y, z: parsed.z } : undefined),
-                time: new Date().toTimeString().slice(0,8),
-                ...parsed
-              };
-              setTrackingEvents(prev => [{
-                objectId: parsed.object_id || "Unknown ID",
-                objectClass: parsed.object_class || "Unknown Object",
-                zoneName: parsed.zone_name,
-                position: parsed.position || (parsed.x !== undefined && parsed.y !== undefined && parsed.z !== undefined ? { x: parsed.x, y: parsed.y, z: parsed.z } : undefined),
-                time: new Date().toTimeString().slice(0,8),
-                ...parsed
-              }, ...prev.slice(0, 9)]);
-            }
-
-            // Member Tracking: speed_event (primary), event/tracking (fallback)
-            if ((topic.includes("speed_event") || topic.includes("event") || topic.includes("tracking")) && parsed.object_id && parsed.zone_name) {
-              setMemberPaths(prev => {
-                const prevPath = prev[parsed.object_id] || [];
-                if (prevPath.length === 0 || prevPath[prevPath.length - 1].zone !== parsed.zone_name) {
-                  return {
-                    ...prev,
-                    [parsed.object_id]: [...prevPath, { zone: parsed.zone_name, time: new Date().toTimeString().slice(0,8), objectClass: parsed.object_class }].slice(-10)
-                  };
-                }
-                return prev;
-              });
-            }
-
-          } catch (e) {
-            console.error("Invalid JSON", e);
-          }
-        });
-      } catch (error) {
-        console.error('Failed to initialize MQTT:', error);
-      }
-    };
-
-    connectMQTT();
-
-    return () => {
-      if (client) {
-        client.end();
-      }
-    };
-  }, []);
-
-  // Clean up object URLs when files change or component unmounts
-  useEffect(() => {
-    return () => {
-      videoUrls.forEach(url => {
-        if (url) URL.revokeObjectURL(url);
+  async function sendEmergencyEmail(subject: string, message: string) {
+    try {
+      await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: 'andy@dacha-uk.com',
+          subject,
+          text: message,
+        }),
       });
-    };
-  }, [videoUrls]);
+    } catch (err) {
+      console.error('Failed to send emergency email:', err);
+    }
+  }
 
   // Colour gradient based on object count
   const getColor = (count: number) => {
@@ -883,43 +1002,15 @@ export default function Dashboard() {
     });
   };
 
-  useEffect(() => {
-    // Open-Meteo API for Ringwood, UK (lat: 50.846, lon: -1.788)
-    fetch('https://api.open-meteo.com/v1/forecast?latitude=50.846&longitude=-1.788&current_weather=true')
-      .then(res => res.json())
-      .then(data => {
-        if (data.current_weather) {
-          setWeather({
-            temp: data.current_weather.temperature,
-            description: data.current_weather.weathercode ? weatherCodeToDesc(data.current_weather.weathercode) : '',
-            icon: weatherCodeToIcon(data.current_weather.weathercode)
-          });
-        }
-      });
-  }, []);
-
-  // Helper to map weather code to description
-  function weatherCodeToDesc(code: number) {
-    const map: { [key: number]: string } = {
-      0: 'Clear', 1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
-      45: 'Fog', 48: 'Depositing Rime Fog', 51: 'Light Drizzle', 53: 'Drizzle', 55: 'Dense Drizzle',
-      56: 'Freezing Drizzle', 57: 'Freezing Drizzle', 61: 'Slight Rain', 63: 'Rain', 65: 'Heavy Rain',
-      66: 'Freezing Rain', 67: 'Freezing Rain', 71: 'Slight Snow', 73: 'Snow', 75: 'Heavy Snow',
-      77: 'Snow Grains', 80: 'Slight Showers', 81: 'Showers', 82: 'Violent Showers',
-      85: 'Slight Snow Showers', 86: 'Heavy Snow Showers', 95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Thunderstorm'
-    };
-    return map[code] || 'Unknown';
-  }
-  // Helper to map weather code to icon
-  function weatherCodeToIcon(code: number) {
-    if ([0, 1].includes(code)) return '☀️';
-    if ([2, 3].includes(code)) return '⛅';
-    if ([45, 48].includes(code)) return '🌫️';
-    if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return '🌧️';
-    if ([71, 73, 75, 77, 85, 86].includes(code)) return '❄️';
-    if ([95, 96, 99].includes(code)) return '⛈️';
-    return '❔';
-  }
+  // Function to handle manual last update check
+  const handleManualLastUpdate = () => {
+    const newTime = new Date().toLocaleTimeString();
+    setLastUpdate(newTime);
+    localStorage.setItem("lastUpdate", newTime);
+    
+    // Toggle ball alert
+    setBallAlert(prev => !prev);
+  };
 
   return (
     <div className="min-h-screen bg-white p-6">
@@ -934,10 +1025,9 @@ export default function Dashboard() {
           <div className="flex items-center gap-2 bg-brand-orange/10 px-3 py-1 rounded shadow text-brand-orange">
             <span
               className="text-2xl cursor-pointer"
-              title="Click to simulate DEFIBRILLATOR IN USE alert for 1 minute"
+              title="Click to toggle DEFIBRILLATOR IN USE alert"
               onClick={() => {
-                setSimulateDefib(true);
-                setTimeout(() => setSimulateDefib(false), 60000);
+                setSimulateDefib(prev => !prev);
               }}
             >
               {weather.icon}
@@ -949,16 +1039,12 @@ export default function Dashboard() {
       )}
       {/* Last update and Logout bar */}
       <div className="w-full flex items-center justify-end gap-6 mb-4">
-        <p
-          className="text-xs text-brand-grey cursor-pointer"
-          title="Click to simulate Free Weights Left Out alert for 1 minute"
-          onClick={() => {
-            setSimulateFreeWeights(true);
-            setTimeout(() => setSimulateFreeWeights(false), 60000);
-          }}
+        <button
+          onClick={handleManualLastUpdate}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
         >
-          Last update: {lastUpdate || "Waiting..."}
-        </p>
+          Last Update: {mounted ? lastUpdate : ""}
+        </button>
         <button
           onClick={() => {
             document.cookie = 'auth=; Max-Age=0; path=/';
@@ -1033,6 +1119,18 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Ball Alert - now in normal flow above Zone Capacity Alerts */}
+      {ballAlert && (
+        <div className="w-full max-w-6xl mx-auto mb-4">
+          <div className="bg-red-600 text-white px-8 py-3 rounded-xl shadow-xl flex items-center gap-2 animate-pulse border-2 border-red-800 justify-center">
+            <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span className="font-bold tracking-wide text-base">FREE WEIGHT LEFT ON FLOOR</span>
+          </div>
+        </div>
+      )}
 
       {/* Zone Capacity Alerts and Emergency Alerts Section */}
       <div className="w-full max-w-6xl mx-auto mb-8">
@@ -1143,17 +1241,10 @@ export default function Dashboard() {
       </div>
 
       {/* Dedicated Free Weights Left Out Alert Section */}
-      {(freeWeightsLeftOutCount > 0 || simulateFreeWeights) && (
-        <div className="w-full max-w-3xl mx-auto mb-8">
-          <div className="flashing-alert bg-red-100 border-l-8 border-red-600 text-red-800 p-6 rounded-xl shadow-xl flex items-center justify-center">
-            <svg className="w-8 h-8 mr-4 text-red-600 animate-pulse" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
-            </svg>
-            <div>
-              <span className="font-bold text-lg">FREE WEIGHTS LEFT OUT!</span>
-              <div className="mt-1 text-base">{freeWeightsLeftOutCount > 0 ? freeWeightsLeftOutCount : 1} free weight(s) detected in the gym. Please check the free weights area immediately.</div>
-            </div>
-          </div>
+      {showFreeWeightsAlert && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Alert: </strong>
+          <span className="block sm:inline">FREE WEIGHTS LEFT OUT!</span>
         </div>
       )}
 
@@ -1171,103 +1262,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-
-      {/* Fire Exit & Gym Car Park & Male Changing & Female Changing & Comms Room Alert Boxes */}
-      <div className="mb-6 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Fire Exit Alert */}
-        <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 ${
-          objectPresence['Fire Exit'] 
-            ? 'bg-red-500 text-white border-red-600' 
-            : 'bg-green-500 text-black border-green-600'
-        } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
-          <h2 className="text-xl font-bold">Fire Exit Alert</h2>
-          <p className="text-lg mt-2">
-            {objectPresence['Fire Exit'] ? '⚠️ Object Detected in Fire Exit Zone' : 'No Members Detected'}
-          </p>
-        </div>
-        {/* Gym Car Park Alert */}
-        <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 ${
-          (objectCounts['Gym Car Park'] || 0) >= 200
-            ? 'bg-red-500 text-white border-red-600 flashing-alert'
-            : (objectCounts['Gym Car Park'] || 0) >= 1
-              ? 'bg-yellow-400 text-black border-yellow-600'
-              : 'bg-green-500 text-black border-green-600'
-        } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
-          <h2 className="text-xl font-bold">Gym Car Park Alert</h2>
-          <p className="text-lg mt-2">
-            {(objectCounts['Gym Car Park'] || 0) >= 200
-              ? 'CAR PARK FULL'
-              : (objectCounts['Gym Car Park'] || 0) >= 1
-                ? 'Car Detected in Gym Car Park'
-                : 'No Members Detected'}
-          </p>
-        </div>
-        {/* Male Changing Alert */}
-        <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 ${
-          objectPresence['Male Changing'] 
-            ? 'bg-red-500 text-white border-red-600' 
-            : 'bg-green-500 text-black border-green-600'
-        } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
-          <h2 className="text-xl font-bold">Male Changing</h2>
-          <p className="text-lg mt-2">
-            {objectPresence['Male Changing'] ? '⚠️ Object Detected in Male Changing Zone' : 'No Members Detected'}
-          </p>
-        </div>
-        {/* Female Changing Alert */}
-        <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 ${
-          objectPresence['Female Changing'] 
-            ? 'bg-red-500 text-white border-red-600' 
-            : 'bg-green-500 text-black border-green-600'
-        } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
-          <h2 className="text-xl font-bold">Female Changing</h2>
-          <p className="text-lg mt-2">
-            {objectPresence['Female Changing'] ? '⚠️ Object Detected in Female Changing Zone' : 'No Members Detected'}
-          </p>
-        </div>
-        {/* Comms Room Alert */}
-        <div className={`bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 ${
-          objectPresence['Comms Room'] 
-            ? 'bg-red-500 text-white border-red-600' 
-            : 'bg-green-500 text-black border-green-600'
-        } border-brand-orange min-h-[120px] flex flex-col justify-center`}>
-          <h2 className="text-xl font-bold">Comms Room</h2>
-          <p className="text-lg mt-2">
-            {objectPresence['Comms Room'] ? '⚠️ Object Detected in Comms Room Zone' : 'No Staff Detected'}
-          </p>
-        </div>
-      </div>
-
-      {/* Gym Area Count and Unstaffed Hours Row - Full Width */}
-      <div className="mb-6 w-full grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Gym Area Count Box */}
-        <div className="bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 border-brand-orange">
-          <h2 className="text-xl font-bold">Gym Area Count</h2>
-          <p className="text-lg mt-2">
-            Cardio Area: {objectCounts['Cardio Area'] || 0} <br />
-            Free Weights: {objectCounts['Free Weights'] || 0} <br />
-            Gym Car Park: {objectCounts['Gym Car Park'] || 0}
-          </p>
-        </div>
-        {/* Unstaffed Hours Box (same style as Gym Area Count) */}
-        <div className="bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 border-brand-orange">
-          <h2 className="text-xl font-bold">Unstaffed Hours</h2>
-          <p className="text-lg mt-2">
-            {unstaffedHoursCount.count > 0 
-              ? `⚠️ ${unstaffedHoursCount.count} Members Detected` 
-              : 'No Members Detected'}
-          </p>
-          <p className="text-sm mt-1 opacity-80">
-            {unstaffedHoursCount.lastUpdate ? `Last update: ${unstaffedHoursCount.lastUpdate}` : ''}
-          </p>
-        </div>
-        {/* Total Gym Attendance Box */}
-        <div className="bg-white shadow-lg rounded-2xl p-4 text-center transform transition-all duration-300 border-4 border-brand-orange">
-          <h2 className="text-xl font-bold">Total Gym Attendance</h2>
-          <p className="text-4xl font-extrabold text-brand-orange mt-2">
-            {new Set(zoneActivity.filter(a => a.objectClass && ['human', 'person'].includes(a.objectClass.toLowerCase())).map(a => a.objectId)).size}
-          </p>
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-brand-orange shadow-lg rounded-2xl p-3 w-48 mx-auto text-center text-white transform hover:scale-105 transition-transform duration-300">
@@ -1586,6 +1580,14 @@ export default function Dashboard() {
           <p className="text-sm text-brand-grey">No member tracking data available.</p>
         )}
       </div>
+
+      {/* Weather Alert */}
+      {showWeatherAlert && (
+        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Weather Alert: </strong>
+          <span className="block sm:inline">Severe weather conditions expected!</span>
+        </div>
+      )}
 
       <style jsx global>{`
         @keyframes fadein {
