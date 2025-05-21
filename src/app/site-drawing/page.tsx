@@ -34,7 +34,7 @@ export default function SiteDrawing() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div className="flex flex-col items-center">
-          <h2 className="text-lg font-semibold mb-2 text-brand-orange text-center">Walkthrough Video</h2>
+          <h2 className="text-lg font-semibold mb-2 text-brand-orange text-center">Walkthrough Video (Working on it!)</h2>
           <video
             src="/Ringwood_Office.mp4"
             controls
