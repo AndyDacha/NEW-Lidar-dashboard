@@ -71,7 +71,7 @@ export default function InfoPage() {
           <strong>Logic:</strong> Each entry shows the zone, object type, ID, and time of detection. The list updates in real time as new events are received. The system maintains a rolling 100-event buffer, with older events being archived. Events are categorized by type (member entry/exit, equipment usage, zone capacity changes) and include timestamps accurate to the second. The log can be filtered by event type, zone, or time period.</p>
         </section>
         <section className="bg-gray-50 rounded-xl shadow p-6">
-          <h2 className="text-xl font-semibold text-brand-orange mb-2">Equipment Status</h2>
+          <h2 className="text-xl font-semibold text-brand-orange mb-2">Equipment Usage Status</h2>
           <p className="text-gray-700">Shows the current status of gym equipment.<br />
           <strong>Logic:</strong> If sensors detect usage, equipment is marked as "In Use" (green check). Otherwise, it is marked as "Not In Use" (red cross).</p>
         </section>

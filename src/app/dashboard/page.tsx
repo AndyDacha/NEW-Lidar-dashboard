@@ -1322,7 +1322,7 @@ export default function Dashboard() {
           </div>
 
           <div className="bg-white p-4 rounded-lg shadow overflow-y-auto border border-brand-grey/30" style={{ height: '450px' }}>
-            <h2 className="text-lg font-semibold mb-2 text-brand-orange">Equipment Status</h2>
+            <h2 className="text-lg font-semibold mb-2 text-brand-orange">Equipment Usage Status</h2>
             {boxData.length > 0 ? (
               <div className="grid grid-cols-2 gap-x-4 text-sm">
                 {boxData
