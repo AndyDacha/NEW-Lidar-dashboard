@@ -1,6 +1,14 @@
+import fs from 'fs';
+import path from 'path';
 import Link from 'next/link';
 
 export default function DeploymentHistory() {
+  const logPath = path.join(process.cwd(), 'deployment-log.json');
+  let log: any[] = [];
+  if (fs.existsSync(logPath)) {
+    log = JSON.parse(fs.readFileSync(logPath, 'utf8'));
+  }
+
   return (
     <div className="min-h-screen bg-white p-6">
       <div className="flex justify-between items-center mb-6">
@@ -11,7 +19,11 @@ export default function DeploymentHistory() {
         <h2 className="text-xl font-semibold text-brand-orange mb-4">Deployment Log</h2>
         <p className="text-gray-700 mb-2">This page will show a log of all deployments for audit and tracking purposes.</p>
         <ul className="list-disc pl-6 text-gray-700">
-          <li>2024-05-27 18:00 — Initial deployment (placeholder)</li>
+          {log.map((entry: any, i: number) => (
+            <li key={i}>
+              {new Date(entry.date).toLocaleString()} — {entry.message}
+            </li>
+          ))}
         </ul>
       </div>
     </div>
