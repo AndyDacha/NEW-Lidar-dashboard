@@ -14,6 +14,7 @@ import {
 } from "chart.js";
 import { Bubble, Bar, Line } from "react-chartjs-2";
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+import Script from "next/script";
 
 ChartJS.register(
   PointElement, 
@@ -1630,6 +1631,22 @@ export default function Dashboard() {
           <p className="text-sm text-brand-grey">No member tracking data available.</p>
         )}
       </div>
+      {/* WhatsApp Widget by GetButton.io */}
+      <Script id="whatsapp-widget" strategy="afterInteractive">
+        {`
+          (function () {
+              var options = {
+                  whatsapp: "+447931154221",
+                  call_to_action: "Message us",
+                  position: "left",
+              };
+              var proto = document.location.protocol, host = "getbutton.io", url = proto + "//static." + host;
+              var s = document.createElement('script'); s.type = 'text/javascript'; s.async = true; s.src = url + '/widget-send-button/js/init.js';
+              s.onload = function () { WhWidgetSendButton.init(host, proto, options); };
+              var x = document.getElementsByTagName('script')[0]; x.parentNode.insertBefore(s, x);
+          })();
+        `}
+      </Script>
     </div>
   );
 }
