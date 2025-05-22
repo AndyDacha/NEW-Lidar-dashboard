@@ -9,17 +9,20 @@ export default function InfoPage() {
         <section className="bg-gray-50 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold text-brand-orange mb-2">Live Gym Occupancy</h2>
           <p className="text-gray-700">Displays the current number of people detected in the gym area, updated in real time using sensor data. <br />
-          <strong>Logic:</strong> The progress bar shows how full the gym is compared to its maximum capacity (700). If occupancy reaches 700, the bar turns red and a critical alert is shown to staff to prevent further entry and ensure safety. The system uses a combination of motion sensors and AI-powered cameras to accurately count individuals, filtering out false positives and ensuring accurate occupancy tracking.</p>
+          <strong>Logic:</strong> The progress bar shows how full the gym is compared to its maximum capacity (700). If occupancy reaches 700, the bar turns red and a critical alert is shown to staff to prevent further entry and ensure safety. The system uses a combination of motion sensors and AI-powered cameras to accurately count individuals, filtering out false positives and ensuring accurate occupancy tracking.<br />
+          <span className="text-xs text-gray-500">Note: The count is currently based on all detected events, not just 'start' events. 'Stop' events are not subtracted. If you want to count only 'start' events or decrement on 'stop', the logic would need to be changed.</span></p>
         </section>
         <section className="bg-gray-50 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold text-brand-orange mb-2">Live Cardio Area</h2>
           <p className="text-gray-700">Shows the number of people currently detected in the cardio area.<br />
-          <strong>Logic:</strong> The maximum capacity is 50. If occupancy approaches or reaches 50, the bar color changes and alerts are triggered to prevent overcrowding. The system uses specialized sensors that can distinguish between people using equipment and those passing through, ensuring accurate occupancy counts. The data is updated every 30 seconds to provide real-time monitoring.</p>
+          <strong>Logic:</strong> The maximum capacity is 50. If occupancy approaches or reaches 50, the bar color changes and alerts are triggered to prevent overcrowding. The system uses specialized sensors that can distinguish between people using equipment and those passing through, ensuring accurate occupancy counts. The data is updated every 30 seconds to provide real-time monitoring.<br />
+          <span className="text-xs text-gray-500">Note: The count is currently based on all detected events, not just 'start' events. 'Stop' events are not subtracted.</span></p>
         </section>
         <section className="bg-gray-50 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold text-brand-orange mb-2">Live Free Weights Area</h2>
           <p className="text-gray-700">Displays the real-time occupancy of the free weights area.<br />
-          <strong>Logic:</strong> The maximum capacity is 150. If occupancy approaches or reaches 150, the bar color changes and alerts are triggered for staff intervention. The system uses a combination of overhead sensors and weight plate detection to accurately count users, distinguishing between active users and those resting between sets. Data is aggregated from multiple sensor points to ensure comprehensive coverage.</p>
+          <strong>Logic:</strong> The maximum capacity is 150. If occupancy approaches or reaches 150, the bar color changes and alerts are triggered for staff intervention. The system uses a combination of overhead sensors and weight plate detection to accurately count users, distinguishing between active users and those resting between sets. Data is aggregated from multiple sensor points to ensure comprehensive coverage.<br />
+          <span className="text-xs text-gray-500">Note: The count is currently based on all detected events, not just 'start' events. 'Stop' events are not subtracted.</span></p>
         </section>
         {/* Total Sensors */}
         <section className="bg-gray-50 rounded-xl shadow p-6">
@@ -31,49 +34,58 @@ export default function InfoPage() {
         <section className="bg-gray-50 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold text-brand-orange mb-2">Active Gym Zones</h2>
           <p className="text-gray-700">Shows the number of distinct gym zones being monitored.<br />
-          <strong>Logic:</strong> The system counts all unique zones defined in the configuration or detected by sensors. Only zones with valid data are included. A zone is considered active if it has received sensor data within the last 15 minutes. The system maintains a map of all zones and their relationships, allowing for accurate tracking of movement between zones and proper capacity management.</p>
+          <strong>Logic:</strong> The system counts all unique zones defined in the configuration or detected by sensors. Only zones with valid data are included. A zone is considered active if it has received sensor data within the last 15 minutes. The system maintains a map of all zones and their relationships, allowing for accurate tracking of movement between zones and proper capacity management.<br />
+          <span className="text-xs text-gray-500">Note: Zone activity is currently based on all detected events, not just 'start' events. 'Stop' events are not subtracted.</span></p>
         </section>
         {/* Members */}
         <section className="bg-gray-50 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold text-brand-orange mb-2">Members</h2>
           <p className="text-gray-700">Displays the number of unique members (people) detected in the gym.<br />
-          <strong>Logic:</strong> Each person is assigned a unique ID by the system. The count reflects the number of unique IDs detected during the current day/session. The system uses a combination of facial recognition and RFID tags to identify members. Members are counted only once per day, even if they leave and return. The system maintains a 24-hour rolling window for member tracking, resetting counts at midnight.</p>
+          <strong>Logic:</strong> Each person is assigned a unique ID by the system. The count reflects the number of unique IDs detected during the current day/session. The system uses a combination of facial recognition and RFID tags to identify members. Members are counted only once per day, even if they leave and return. The system maintains a 24-hour rolling window for member tracking, resetting counts at midnight.<br />
+          <span className="text-xs text-gray-500">Note: Member detection is currently based on all detected events, not just 'start' events. 'Stop' events are not subtracted.</span></p>
         </section>
         {/* Vehicles */}
         <section className="bg-gray-50 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold text-brand-orange mb-2">Vehicles</h2>
           <p className="text-gray-700">Shows the number of unique vehicles detected in the gym car park or other monitored areas.<br />
-          <strong>Logic:</strong> Each vehicle is assigned a unique ID. The count reflects the number of unique vehicle IDs detected during the current day/session. The system uses license plate recognition and parking space sensors to track vehicles. Vehicles are counted when they enter the parking area and are removed from the count when they leave. The system maintains a history of vehicle movements for security purposes.</p>
+          <strong>Logic:</strong> Each vehicle is assigned a unique ID. The count reflects the number of unique vehicle IDs detected during the current day/session. The system uses license plate recognition and parking space sensors to track vehicles. Vehicles are counted when they enter the parking area and are removed from the count when they leave. The system maintains a history of vehicle movements for security purposes.<br />
+          <span className="text-xs text-gray-500">Note: Vehicle detection is currently based on all detected events, not just 'start' events. 'Stop' events are not subtracted.</span></p>
         </section>
         <section className="bg-gray-50 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold text-brand-orange mb-2">Zone Capacity Alerts</h2>
           <p className="text-gray-700">Alerts are shown if any area (Gym, Cardio, Free Weights) approaches or exceeds its safe capacity.<br />
-          <strong>Logic:</strong> Warnings are shown at 80% capacity (bar turns yellow), and critical alerts at 90% or above (bar turns red, alert box appears). This helps staff take action before overcrowding occurs.</p>
+          <strong>Logic:</strong> Warnings are shown at 80% capacity (bar turns yellow), and critical alerts at 90% or above (bar turns red, alert box appears). This helps staff take action before overcrowding occurs.<br />
+          <span className="text-xs text-gray-500">Note: Capacity calculations are currently based on all detected events, not just 'start' events. 'Stop' events are not subtracted.</span></p>
         </section>
         <section className="bg-gray-50 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold text-brand-orange mb-2">Fire Exit, Car Park, Changing Rooms, Comms Room Alerts</h2>
           <p className="text-gray-700">These boxes show if any objects or people are detected in critical zones.<br />
-          <strong>Logic:</strong> If an object is detected in a fire exit, car park, or changing room, the box turns red and an alert is shown. This helps ensure safety and compliance.</p>
+          <strong>Logic:</strong> If an object is detected in a fire exit, car park, or changing room, the box turns red and an alert is shown. This helps ensure safety and compliance.<br />
+          <span className="text-xs text-gray-500">Note: Detection is currently based on all detected events, not just 'start' events. 'Stop' events are not subtracted.</span></p>
         </section>
         <section className="bg-gray-50 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold text-brand-orange mb-2">Gym Area Count, Unstaffed Hours, Total Attendance</h2>
           <p className="text-gray-700">Summarizes key metrics: number of people in each area, detections during unstaffed hours, and total unique members detected today.<br />
-          <strong>Logic:</strong> Unstaffed hours are defined by time and day. If members are detected during these hours, a warning is shown. Attendance is tracked by unique IDs.</p>
+          <strong>Logic:</strong> Unstaffed hours are defined by time and day. If members are detected during these hours, a warning is shown. Attendance is tracked by unique IDs.<br />
+          <span className="text-xs text-gray-500">Note: Counts are currently based on all detected events, not just 'start' events. 'Stop' events are not subtracted.</span></p>
         </section>
         <section className="bg-gray-50 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold text-brand-orange mb-2">Zone Heatmap</h2>
           <p className="text-gray-700">A visual map showing activity levels in each gym zone.<br />
-          <strong>Logic:</strong> Hotter colors indicate more activity. Zones with higher object counts are highlighted for quick visual reference.</p>
+          <strong>Logic:</strong> Hotter colors indicate more activity. Zones with higher object counts are highlighted for quick visual reference.<br />
+          <span className="text-xs text-gray-500">Note: Heatmap activity is currently based on all detected events, not just 'start' events. 'Stop' events are not subtracted.</span></p>
         </section>
         <section className="bg-gray-50 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold text-brand-orange mb-2">Recent Activity</h2>
           <p className="text-gray-700">A running log of the latest detected events.<br />
-          <strong>Logic:</strong> Each entry shows the zone, object type, ID, and time of detection. The list updates in real time as new events are received. The system maintains a rolling 100-event buffer, with older events being archived. Events are categorized by type (member entry/exit, equipment usage, zone capacity changes) and include timestamps accurate to the second. The log can be filtered by event type, zone, or time period.</p>
+          <strong>Logic:</strong> Each entry shows the zone, object type, ID, and time of detection. The list updates in real time as new events are received. The system maintains a rolling 100-event buffer, with older events being archived. Events are categorized by type (member entry/exit, equipment usage, zone capacity changes) and include timestamps accurate to the second. The log can be filtered by event type, zone, or time period.<br />
+          <span className="text-xs text-gray-500">Note: The activity log includes all detected events, not just 'start' events. 'Stop' events are also shown but do not affect the occupancy counts.</span></p>
         </section>
         <section className="bg-gray-50 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold text-brand-orange mb-2">Equipment Usage Status</h2>
           <p className="text-gray-700">Shows the current status of gym equipment.<br />
-          <strong>Logic:</strong> If sensors detect usage, equipment is marked as "In Use" (green check). Otherwise, it is marked as "Not In Use" (red cross).</p>
+          <strong>Logic:</strong> If sensors detect usage, equipment is marked as "In Use" (green check). Otherwise, it is marked as "Not In Use" (red cross).<br />
+          <span className="text-xs text-gray-500">Note: Equipment usage is currently based on all detected events, not just 'start' events. 'Stop' events are not subtracted.</span></p>
         </section>
         <section className="bg-gray-50 rounded-xl shadow p-6">
           <h2 className="text-xl font-semibold text-brand-orange mb-2">Object Type Distribution</h2>
