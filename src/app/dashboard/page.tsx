@@ -1077,7 +1077,7 @@ export default function Dashboard() {
               style={{ width: `${Math.min((objectPresence['Gym Area'] || totalObjects) / 700 * 100, 100)}%` }}
             >
               <span
-                className={`absolute left-4 font-bold text-sm z-10 ${((objectPresence['Gym Area'] || totalObjects) / 700) >= 0.5 ? 'text-white' : 'text-gray-400'}`}
+                className="absolute left-4 font-bold text-sm z-10"
                 style={{textShadow: 'none'}}>
                 {objectPresence['Gym Area'] || totalObjects} / 700
               </span>
@@ -1097,7 +1097,7 @@ export default function Dashboard() {
               style={{ width: `${Math.min((objectCounts['Cardio Area'] || 0) / 50 * 100, 100)}%` }}
             >
               <span
-                className={`absolute left-4 font-bold text-sm z-10 ${((objectCounts['Cardio Area'] || 0) / 50) >= 0.5 ? 'text-white' : 'text-gray-400'}`}
+                className="absolute left-4 font-bold text-sm z-10"
                 style={{textShadow: 'none'}}>
                 {objectCounts['Cardio Area'] || 0} / 50
               </span>
@@ -1117,7 +1117,7 @@ export default function Dashboard() {
               style={{ width: `${Math.min((objectCounts['Free Weights'] || 0) / 150 * 100, 100)}%` }}
             >
               <span
-                className={`absolute left-4 font-bold text-sm z-10 ${((objectCounts['Free Weights'] || 0) / 150) >= 0.5 ? 'text-white' : 'text-gray-400'}`}
+                className="absolute left-4 font-bold text-sm z-10"
                 style={{textShadow: 'none'}}>
                 {objectCounts['Free Weights'] || 0} / 150
               </span>
@@ -1612,13 +1612,11 @@ export default function Dashboard() {
                         if (i < zones.length - 1) {
                           const t1 = timeStringToSeconds(entry.time);
                           const t2 = timeStringToSeconds(zones[i + 1].time);
-                          duration = isFinite(t2 - t1) ? `- ${t2 - t1}s` : '';
-                        } else {
-                          duration = '- current';
+                          duration = isFinite(t2 - t1) ? ` (${t2 - t1}s)` : '';
                         }
                         return (
-                          <span key={i} className="inline-block bg-brand-orange/10 text-brand-orange rounded px-2 py-0.5 mr-1 mb-1 border border-brand-orange/20">
-                            {entry.zone} <span className="text-xs text-brand-grey">({entry.time} {duration}{entry.objectClass ? `, ${entry.objectClass}` : ''})</span>
+                          <span key={i} className="inline-block mr-2">
+                            {entry.zone} <span className="text-xs text-gray-400">{entry.time}{duration}</span>
                           </span>
                         );
                       })}
@@ -1632,31 +1630,6 @@ export default function Dashboard() {
           <p className="text-sm text-brand-grey">No member tracking data available.</p>
         )}
       </div>
-
-      {/* Weather Alert */}
-      {showWeatherAlert && (
-        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">
-          <strong className="font-bold">Weather Alert: </strong>
-          <span className="block sm:inline">Severe weather conditions expected!</span>
-        </div>
-      )}
-
-      <style jsx global>{`
-        @keyframes fadein {
-          0% { opacity: 0; transform: translateY(-20px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadein {
-          animation: fadein 1.2s cubic-bezier(0.4,0,0.2,1);
-        }
-        .flashing-alert {
-          animation: flash-red 1s infinite alternate;
-        }
-        @keyframes flash-red {
-          0% { background-color: #fee2e2; border-color: #dc2626; }
-          100% { background-color: #f87171; border-color: #b91c1c; }
-        }
-      `}</style>
     </div>
   );
-} 
+}
