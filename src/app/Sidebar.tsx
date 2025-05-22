@@ -39,6 +39,7 @@ export default function Sidebar() {
     };
   }, []);
 
+  // Move the early return after all hooks
   if (!pathname || pathname === "/login") return null;
 
   // Function to handle auto-logout
