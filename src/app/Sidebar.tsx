@@ -30,6 +30,11 @@ export default function Sidebar() {
         action: 'Auto Logout - Inactivity',
         ip: ''
       })
+    }).then(response => {
+      const logEvent = response.headers.get('X-Log-Event');
+      if (logEvent) {
+        window.dispatchEvent(new CustomEvent('new-log', { detail: JSON.parse(logEvent) }));
+      }
     });
     document.cookie = "auth=; path=/; max-age=0; SameSite=Strict; secure";
     router.push("/login");
@@ -90,6 +95,11 @@ export default function Sidebar() {
         action: 'Logout',
         ip: ''
       })
+    }).then(response => {
+      const logEvent = response.headers.get('X-Log-Event');
+      if (logEvent) {
+        window.dispatchEvent(new CustomEvent('new-log', { detail: JSON.parse(logEvent) }));
+      }
     });
     document.cookie = "auth=; path=/; max-age=0; SameSite=Strict; secure";
     router.push("/login");

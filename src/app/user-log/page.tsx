@@ -12,9 +12,27 @@ export default function UserLogPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
 
   useEffect(() => {
-    fetch('/api/log-event')
-      .then(res => res.json())
-      .then(setLogs);
+    // Load logs from localStorage
+    const storedLogs = localStorage.getItem('userLogs');
+    if (storedLogs) {
+      setLogs(JSON.parse(storedLogs));
+    }
+
+    // Set up event listener for new logs
+    const handleNewLog = (event: any) => {
+      const newLog = event.detail;
+      setLogs(prevLogs => {
+        const updatedLogs = [newLog, ...prevLogs];
+        localStorage.setItem('userLogs', JSON.stringify(updatedLogs));
+        return updatedLogs;
+      });
+    };
+
+    window.addEventListener('new-log', handleNewLog);
+
+    return () => {
+      window.removeEventListener('new-log', handleNewLog);
+    };
   }, []);
 
   return (
