@@ -173,6 +173,13 @@ export default function InfoPage() {
             <strong>Note:</strong> Local data storage is specific to your browser and device. Clearing your browser cache or using a different device/browser will result in a fresh dashboard state.
           </p>
         </section>
+        <section className="bg-gray-50 rounded-xl shadow p-6">
+          <h2 className="text-xl font-semibold text-brand-orange mb-2">Reset Dashboard Data</h2>
+          <p className="text-gray-700">
+            The <strong>Reset Dashboard Data</strong> button is available in the sidebar below the Log Out button. Clicking this button will clear all locally stored dashboard data (attendance, object counts, activity logs, etc.) from your browser and reload the dashboard. This is useful if you want to start fresh, clear test/demo data, or resolve data inconsistencies.<br /><br />
+            <strong>How it works:</strong> The button removes all relevant <code>localStorage</code> keys used by the dashboard and then refreshes the page. Only your current browser/device is affected; other users and devices will keep their own data until they reset as well.
+          </p>
+        </section>
       </div>
     </div>
   );

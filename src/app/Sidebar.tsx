@@ -146,6 +146,22 @@ export default function Sidebar() {
                   Log Out
                 </button>
               </div>
+              <div className="mt-2">
+                <button
+                  onClick={() => {
+                    localStorage.removeItem('attendance');
+                    localStorage.removeItem('objectCounts');
+                    localStorage.removeItem('zoneActivity');
+                    localStorage.removeItem('lastUpdate');
+                    localStorage.removeItem('memberPaths');
+                    localStorage.removeItem('objectTypeCounts');
+                    window.location.reload();
+                  }}
+                  className="w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors mt-2"
+                >
+                  Reset Dashboard Data
+                </button>
+              </div>
             </nav>
           </div>
         </div>
