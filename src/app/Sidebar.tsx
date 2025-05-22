@@ -39,48 +39,6 @@ export default function Sidebar() {
     };
   }, []);
 
-  // Move the early return after all hooks
-  if (!pathname || pathname === "/login") return null;
-
-  // Function to handle auto-logout
-  const handleAutoLogout = () => {
-    const getCookie = (name: string) => {
-      try {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) {
-          const part = parts.pop();
-          if (part) return part.split(';').shift();
-        }
-      } catch (e) {
-        return '';
-      }
-      return '';
-    };
-    const username = getCookie('username');
-    if (username) {
-      // Log the auto-logout event
-      fetch('/api/log-event', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          timestamp: new Date().toISOString(),
-          user: username,
-          action: 'Auto Logout - Inactivity',
-          ip: ''
-        })
-      }).then(response => {
-        const logEvent = response.headers.get('X-Log-Event');
-        if (logEvent) {
-          window.dispatchEvent(new CustomEvent('new-log', { detail: JSON.parse(logEvent) }));
-        }
-      });
-    }
-    document.cookie = "auth=; path=/; max-age=0; SameSite=Strict; secure";
-    router.push("/login");
-    return;
-  };
-
   // Set up inactivity timer
   useEffect(() => {
     let inactivityTimer: NodeJS.Timeout;
@@ -152,7 +110,46 @@ export default function Sidebar() {
     return;
   };
 
-  return (
+  // Function to handle auto-logout
+  const handleAutoLogout = () => {
+    const getCookie = (name: string) => {
+      try {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+          const part = parts.pop();
+          if (part) return part.split(';').shift();
+        }
+      } catch (e) {
+        return '';
+      }
+      return '';
+    };
+    const username = getCookie('username');
+    if (username) {
+      // Log the auto-logout event
+      fetch('/api/log-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          user: username,
+          action: 'Auto Logout - Inactivity',
+          ip: ''
+        })
+      }).then(response => {
+        const logEvent = response.headers.get('X-Log-Event');
+        if (logEvent) {
+          window.dispatchEvent(new CustomEvent('new-log', { detail: JSON.parse(logEvent) }));
+        }
+      });
+    }
+    document.cookie = "auth=; path=/; max-age=0; SameSite=Strict; secure";
+    router.push("/login");
+    return;
+  };
+
+  return (!pathname || pathname === "/login") ? null : (
     <div className="group fixed left-0 top-0 h-full z-50 flex flex-col justify-between">
       <div>
         {/* Menu trigger button */}
