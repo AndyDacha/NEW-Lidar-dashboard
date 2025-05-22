@@ -49,6 +49,12 @@ export default function Sidebar() {
               <Link href="/user-log" className="block text-white hover:text-brand-orange transition-colors duration-200">
                 User Log & Audit Trail
               </Link>
+              <Link href="/data-flow" className="block text-white hover:text-brand-orange transition-colors duration-200">
+                Data Flow
+              </Link>
+              <Link href="/deployment-history" className="block text-white hover:text-brand-orange transition-colors duration-200">
+                Deployment History
+              </Link>
             </nav>
           </div>
         </div>

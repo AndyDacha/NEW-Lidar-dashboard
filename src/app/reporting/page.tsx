@@ -11,6 +11,7 @@ import {
   Legend,
   ArcElement,
 } from 'chart.js';
+import Link from 'next/link';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
@@ -104,7 +105,10 @@ export default function ReportingPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-brand-orange mb-4">Reporting</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-brand-orange">Reporting</h1>
+        <Link href="/dashboard" className="text-brand-orange underline hover:text-orange-700">Back to Dashboard</Link>
+      </div>
 
       {/* Daily Attendance Report with date range filter */}
       <section className="mb-8 p-6 bg-white rounded-lg shadow border border-brand-grey/20">

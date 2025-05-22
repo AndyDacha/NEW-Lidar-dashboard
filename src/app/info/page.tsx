@@ -165,6 +165,14 @@ export default function InfoPage() {
           <p className="text-gray-700">Shows the average duration members spend in each zone of the gym.<br />
           <strong>Logic:</strong> The system tracks entry and exit times for each member in each zone. The average is calculated by summing all durations and dividing by the number of visits. Time spent is measured from when a member enters a zone until they either leave or move to a different zone. The system maintains separate averages for different times of day and days of the week to help with capacity planning.</p>
         </section>
+        {/* Local Data Storage & Persistence */}
+        <section className="bg-gray-50 rounded-xl shadow p-6">
+          <h2 className="text-xl font-semibold text-brand-orange mb-2">Local Data Storage & Persistence</h2>
+          <p className="text-gray-700">
+            To ensure a smooth user experience and prevent data loss when the page is refreshed or temporarily closed, the dashboard stores key data locally in your browser using <strong>localStorage</strong>. This includes information such as attendance counts, object counts, recent activity logs, and other dashboard state. Whenever you interact with the dashboard or new sensor data arrives, the relevant data is automatically saved to localStorage. When you revisit or reload the page, the dashboard retrieves this data and restores your previous session, so you don't lose important information or have to wait for all data to reload from scratch. <br /><br />
+            <strong>Note:</strong> Local data storage is specific to your browser and device. Clearing your browser cache or using a different device/browser will result in a fresh dashboard state.
+          </p>
+        </section>
       </div>
     </div>
   );
