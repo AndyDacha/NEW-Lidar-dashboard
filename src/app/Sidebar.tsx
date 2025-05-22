@@ -6,23 +6,32 @@ import { useEffect, useState } from "react";
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [lastDeployment, setLastDeployment] = useState<string>("");
+  const [lastDeployment, setLastDeployment] = useState<string>('Loading...');
 
   useEffect(() => {
-    fetch('/api/deployment-time')
-      .then(res => res.json())
-      .then(data => {
+    const fetchDeploymentTime = async () => {
+      try {
+        const response = await fetch('/api/deployment-time');
+        const data = await response.json();
         if (data.lastDeployment) {
-          setLastDeployment(new Date(data.lastDeployment).toLocaleString());
+          const date = new Date(data.lastDeployment);
+          setLastDeployment(date.toLocaleString());
+        } else {
+          setLastDeployment('Unknown');
         }
-      })
-      .catch(error => {
+      } catch (error) {
         console.error('Error fetching deployment time:', error);
         setLastDeployment('Unknown');
-      });
+      }
+    };
+
+    fetchDeploymentTime();
+    // Refresh deployment time every 5 minutes
+    const interval = setInterval(fetchDeploymentTime, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
-  if (pathname === "/login") return null;
+  if (!pathname || pathname === "/login") return null;
 
   // Function to handle auto-logout
   const handleAutoLogout = () => {
@@ -187,8 +196,15 @@ export default function Sidebar() {
                 >
                   Reset Dashboard Data
                 </button>
-                <div className="mt-2 text-xs text-gray-400 text-center">
-                  Last Deployed: {lastDeployment}
+                <div className="mt-2 text-xs text-gray-500 text-center">
+                  Last Deployment: {lastDeployment}
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="ml-2 text-brand-orange hover:text-brand-orange-dark"
+                    title="Refresh deployment time"
+                  >
+                    ↻
+                  </button>
                 </div>
               </div>
             </nav>
