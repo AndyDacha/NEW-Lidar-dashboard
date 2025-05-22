@@ -1,5 +1,17 @@
 [
   {
+    "timestamp": "2025-05-22T11:54:20.402Z",
+    "user": "Dacha2025LIDAR",
+    "action": "Login Success",
+    "ip": ""
+  },
+  {
+    "timestamp": "2025-05-22T11:54:16.055Z",
+    "user": "Dacha2025LIDAR",
+    "action": "Logout",
+    "ip": ""
+  },
+  {
     "timestamp": "2025-05-22T06:56:50.521Z",
     "user": "Dacha2025LIDAR",
     "action": "Login Success",
