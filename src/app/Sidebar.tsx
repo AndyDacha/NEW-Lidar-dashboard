@@ -36,31 +36,37 @@ export default function Sidebar() {
   // Function to handle auto-logout
   const handleAutoLogout = () => {
     const getCookie = (name: string) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) {
-        const part = parts.pop();
-        if (part) return part.split(';').shift();
+      try {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+          const part = parts.pop();
+          if (part) return part.split(';').shift();
+        }
+      } catch (e) {
+        return '';
       }
       return '';
     };
     const username = getCookie('username');
-    // Log the auto-logout event
-    fetch('/api/log-event', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        timestamp: new Date().toISOString(),
-        user: username,
-        action: 'Auto Logout - Inactivity',
-        ip: ''
-      })
-    }).then(response => {
-      const logEvent = response.headers.get('X-Log-Event');
-      if (logEvent) {
-        window.dispatchEvent(new CustomEvent('new-log', { detail: JSON.parse(logEvent) }));
-      }
-    });
+    if (username) {
+      // Log the auto-logout event
+      fetch('/api/log-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          user: username,
+          action: 'Auto Logout - Inactivity',
+          ip: ''
+        })
+      }).then(response => {
+        const logEvent = response.headers.get('X-Log-Event');
+        if (logEvent) {
+          window.dispatchEvent(new CustomEvent('new-log', { detail: JSON.parse(logEvent) }));
+        }
+      });
+    }
     document.cookie = "auth=; path=/; max-age=0; SameSite=Strict; secure";
     router.push("/login");
   };
@@ -99,33 +105,38 @@ export default function Sidebar() {
   }, []);
 
   const handleLogout = () => {
-    // Get username from cookie
     const getCookie = (name: string) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) {
-        const part = parts.pop();
-        if (part) return part.split(';').shift();
+      try {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+          const part = parts.pop();
+          if (part) return part.split(';').shift();
+        }
+      } catch (e) {
+        return '';
       }
       return '';
     };
     const username = getCookie('username');
-    // Log the logout event
-    fetch('/api/log-event', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        timestamp: new Date().toISOString(),
-        user: username,
-        action: 'Logout',
-        ip: ''
-      })
-    }).then(response => {
-      const logEvent = response.headers.get('X-Log-Event');
-      if (logEvent) {
-        window.dispatchEvent(new CustomEvent('new-log', { detail: JSON.parse(logEvent) }));
-      }
-    });
+    if (username) {
+      // Log the logout event
+      fetch('/api/log-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          user: username,
+          action: 'Logout',
+          ip: ''
+        })
+      }).then(response => {
+        const logEvent = response.headers.get('X-Log-Event');
+        if (logEvent) {
+          window.dispatchEvent(new CustomEvent('new-log', { detail: JSON.parse(logEvent) }));
+        }
+      });
+    }
     document.cookie = "auth=; path=/; max-age=0; SameSite=Strict; secure";
     router.push("/login");
   };
@@ -184,12 +195,16 @@ export default function Sidebar() {
               <div className="mt-2">
                 <button
                   onClick={() => {
-                    localStorage.removeItem('attendance');
-                    localStorage.removeItem('objectCounts');
-                    localStorage.removeItem('zoneActivity');
-                    localStorage.removeItem('lastUpdate');
-                    localStorage.removeItem('memberPaths');
-                    localStorage.removeItem('objectTypeCounts');
+                    try {
+                      localStorage.removeItem('attendance');
+                      localStorage.removeItem('objectCounts');
+                      localStorage.removeItem('zoneActivity');
+                      localStorage.removeItem('lastUpdate');
+                      localStorage.removeItem('memberPaths');
+                      localStorage.removeItem('objectTypeCounts');
+                    } catch (e) {
+                      // ignore errors
+                    }
                     window.location.reload();
                   }}
                   className="w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors mt-2"
