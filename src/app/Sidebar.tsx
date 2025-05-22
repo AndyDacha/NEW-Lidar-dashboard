@@ -9,26 +9,34 @@ export default function Sidebar() {
   const [lastDeployment, setLastDeployment] = useState<string>('Loading...');
 
   useEffect(() => {
+    let isMounted = true;
     const fetchDeploymentTime = async () => {
       try {
         const response = await fetch('/api/deployment-time');
         const data = await response.json();
-        if (data.lastDeployment) {
-          const date = new Date(data.lastDeployment);
-          setLastDeployment(date.toLocaleString());
-        } else {
-          setLastDeployment('Unknown');
+        if (isMounted) {
+          if (data.lastDeployment) {
+            const date = new Date(data.lastDeployment);
+            setLastDeployment(date.toLocaleString());
+          } else {
+            setLastDeployment('Unknown');
+          }
         }
       } catch (error) {
-        console.error('Error fetching deployment time:', error);
-        setLastDeployment('Unknown');
+        if (isMounted) {
+          console.error('Error fetching deployment time:', error);
+          setLastDeployment('Unknown');
+        }
       }
     };
 
     fetchDeploymentTime();
     // Refresh deployment time every 5 minutes
     const interval = setInterval(fetchDeploymentTime, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   if (!pathname || pathname === "/login") return null;
@@ -69,6 +77,7 @@ export default function Sidebar() {
     }
     document.cookie = "auth=; path=/; max-age=0; SameSite=Strict; secure";
     router.push("/login");
+    return;
   };
 
   // Set up inactivity timer
@@ -139,6 +148,7 @@ export default function Sidebar() {
     }
     document.cookie = "auth=; path=/; max-age=0; SameSite=Strict; secure";
     router.push("/login");
+    return;
   };
 
   return (
