@@ -1076,11 +1076,11 @@ export default function Dashboard() {
               }`}
               style={{ width: `${Math.min((objectPresence['Gym Area'] || totalObjects) / 700 * 100, 100)}%` }}
             >
-              {((objectPresence['Gym Area'] || totalObjects) / 700) < 0.5 && (
-                <span className="absolute left-4 font-bold text-sm text-gray-400 z-10" style={{textShadow: 'none'}}>
-                  {objectPresence['Gym Area'] || totalObjects} / 700
-                </span>
-              )}
+              <span
+                className={`absolute left-4 font-bold text-sm z-10 ${((objectPresence['Gym Area'] || totalObjects) / 700) >= 0.5 ? 'text-white' : 'text-gray-400'}`}
+                style={{textShadow: 'none'}}>
+                {objectPresence['Gym Area'] || totalObjects} / 700
+              </span>
             </div>
           </div>
         </div>
@@ -1096,11 +1096,11 @@ export default function Dashboard() {
               }`}
               style={{ width: `${Math.min((objectCounts['Cardio Area'] || 0) / 50 * 100, 100)}%` }}
             >
-              {((objectCounts['Cardio Area'] || 0) / 50) < 0.5 && (
-                <span className="absolute left-4 font-bold text-sm text-gray-400 z-10" style={{textShadow: 'none'}}>
-                  {objectCounts['Cardio Area'] || 0} / 50
-                </span>
-              )}
+              <span
+                className={`absolute left-4 font-bold text-sm z-10 ${((objectCounts['Cardio Area'] || 0) / 50) >= 0.5 ? 'text-white' : 'text-gray-400'}`}
+                style={{textShadow: 'none'}}>
+                {objectCounts['Cardio Area'] || 0} / 50
+              </span>
             </div>
           </div>
         </div>
@@ -1116,11 +1116,11 @@ export default function Dashboard() {
               }`}
               style={{ width: `${Math.min((objectCounts['Free Weights'] || 0) / 150 * 100, 100)}%` }}
             >
-              {((objectCounts['Free Weights'] || 0) / 150) < 0.5 && (
-                <span className="absolute left-4 font-bold text-sm text-gray-400 z-10" style={{textShadow: 'none'}}>
-                  {objectCounts['Free Weights'] || 0} / 150
-                </span>
-              )}
+              <span
+                className={`absolute left-4 font-bold text-sm z-10 ${((objectCounts['Free Weights'] || 0) / 150) >= 0.5 ? 'text-white' : 'text-gray-400'}`}
+                style={{textShadow: 'none'}}>
+                {objectCounts['Free Weights'] || 0} / 150
+              </span>
             </div>
           </div>
         </div>
