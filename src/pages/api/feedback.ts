@@ -35,6 +35,20 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     feedback.unshift(newItem);
     fs.writeFileSync(feedbackPath, JSON.stringify(feedback, null, 2));
     res.status(200).json(feedback);
+  } else if (req.method === 'PATCH') {
+    const { id, status } = req.body;
+    if (!id || !status) {
+      return res.status(400).json({ error: 'Missing id or status' });
+    }
+    let feedback = [];
+    if (fs.existsSync(feedbackPath)) {
+      feedback = JSON.parse(fs.readFileSync(feedbackPath, 'utf8'));
+    }
+    feedback = feedback.map((item: any) =>
+      item.id === id ? { ...item, status } : item
+    );
+    fs.writeFileSync(feedbackPath, JSON.stringify(feedback, null, 2));
+    res.status(200).json(feedback);
   } else {
     res.status(405).end();
   }

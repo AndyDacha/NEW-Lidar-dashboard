@@ -19,6 +19,7 @@ export default function FeedbackPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [updating, setUpdating] = useState<string | null>(null);
 
   // Fetch feedback on mount
   useEffect(() => {
@@ -50,6 +51,20 @@ export default function FeedbackPage() {
       setError('Failed to submit feedback.');
     }
     setSubmitting(false);
+  };
+
+  const handleStatusChange = async (id: string, status: string) => {
+    setUpdating(id);
+    const res = await fetch('/api/feedback', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setFeedback(updated);
+    }
+    setUpdating(null);
   };
 
   return (
@@ -105,6 +120,16 @@ export default function FeedbackPage() {
               <div className="flex justify-between items-center mb-1">
                 <span className="font-semibold text-brand-orange">{item.name}</span>
                 <span className={`text-xs px-2 py-1 rounded font-bold ${item.status === 'Completed' ? 'bg-green-200 text-green-800' : item.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' : item.status === 'Open' ? 'bg-red-200 text-red-800' : 'bg-gray-200 text-gray-800'}`}>{item.status}</span>
+                <select
+                  value={item.status}
+                  onChange={e => handleStatusChange(item.id, e.target.value)}
+                  className="ml-2 text-xs px-2 py-1 rounded border border-gray-300"
+                  disabled={updating === item.id}
+                >
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                </select>
               </div>
               <div className="text-xs text-gray-500 mb-1">{item.page} | {item.type}</div>
               <div className="text-gray-700 mb-1">{item.message}</div>
