@@ -138,9 +138,6 @@ export default function Sidebar() {
               <Link href="/deployment-history" className="block text-white hover:text-brand-orange transition-colors duration-200">
                 Deployment History
               </Link>
-              <Link href="/feedback" className="block text-white hover:text-brand-orange transition-colors duration-200">
-                Feedback & Feature Requests
-              </Link>
             </nav>
           </div>
         </div>
