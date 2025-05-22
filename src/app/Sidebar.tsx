@@ -1,11 +1,27 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [lastDeployment, setLastDeployment] = useState<string>("");
+
+  useEffect(() => {
+    fetch('/api/deployment-time')
+      .then(res => res.json())
+      .then(data => {
+        if (data.lastDeployment) {
+          setLastDeployment(new Date(data.lastDeployment).toLocaleString());
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching deployment time:', error);
+        setLastDeployment('Unknown');
+      });
+  }, []);
+
   if (pathname === "/login") return null;
 
   // Function to handle auto-logout
@@ -171,6 +187,9 @@ export default function Sidebar() {
                 >
                   Reset Dashboard Data
                 </button>
+                <div className="mt-2 text-xs text-gray-400 text-center">
+                  Last Deployed: {lastDeployment}
+                </div>
               </div>
             </nav>
           </div>
