@@ -35,4 +35,4 @@ next-env.d.ts
 # Large media files
 // public/*.mp4
 public/*.mov
-public/*.pdf 
+public/*.pdf public/CCTV Capture.mp4
