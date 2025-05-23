@@ -192,6 +192,25 @@ export default function InfoPage() {
             <strong>How it works:</strong> The button removes all relevant <code>localStorage</code> keys used by the dashboard and then refreshes the page. Only your current browser/device is affected; other users and devices will keep their own data until they reset as well.
           </p>
         </section>
+        <section className="bg-gray-50 rounded-xl shadow p-6">
+          <h2 className="text-xl font-semibold text-brand-orange mb-2">Member Tracking Visual Simulation</h2>
+          <p className="text-gray-700">
+            The <strong>Member Tracking Visual</strong> page provides a dynamic simulation of member movement throughout the gym. It visually represents how members move between different zones, using animated icons and real-time data. <br /><br />
+            <strong>Features:</strong>
+            <ul className="list-disc pl-5 mt-2">
+              <li>Animated icons show members moving smoothly between gym zones based on tracking data.</li>
+              <li>Each member follows a unique path, with realistic dwell times in workout zones to simulate real behavior.</li>
+              <li>Zones are highlighted when occupied, and a heatmap shows which zones are most frequently visited.</li>
+              <li>Member trails display recent movement history for each member.</li>
+              <li>Static members are shown at fixed locations to represent people standing still in the gym.</li>
+              <li>Special icons and alerts (e.g., a dumbbell with an "ALERT" label) simulate events like equipment left on the floor.</li>
+              <li>A color-coded legend identifies each member and their corresponding icon color.</li>
+              <li>The simulation is designed for both visual clarity and analytical insight, helping staff and users understand gym usage patterns at a glance.</li>
+            </ul>
+            <br />
+            <strong>Logic:</strong> The simulation uses mock and real tracking data to animate member movement, interpolating positions between zones and pausing at each zone according to typical dwell times. Zone occupancy, trails, and alerts are updated in real time to reflect the current state of the gym.
+          </p>
+        </section>
       </div>
     </div>
   );
