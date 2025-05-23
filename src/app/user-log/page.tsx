@@ -44,7 +44,6 @@ export default function UserLogPage() {
                 <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Timestamp</th>
                 <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">User</th>
                 <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">Action</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700">IP Address</th>
               </tr>
             </thead>
             <tbody>
@@ -53,7 +52,6 @@ export default function UserLogPage() {
                   <td className="px-4 py-2 text-sm text-gray-800">{new Date(log.timestamp).toLocaleString()}</td>
                   <td className="px-4 py-2 text-sm text-gray-800">{log.user}</td>
                   <td className={`px-4 py-2 text-sm font-medium ${log.action && log.action.includes("Failure") ? "text-red-600" : log.action && log.action.includes("Success") ? "text-green-600" : "text-gray-800"}`}>{log.action}</td>
-                  <td className="px-4 py-2 text-sm text-gray-800">{log.ip}</td>
                 </tr>
               ))}
             </tbody>
