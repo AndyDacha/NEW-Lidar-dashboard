@@ -218,7 +218,7 @@ export default function Sidebar() {
                     }
                     window.location.reload();
                   }}
-                  className="w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors mt-2"
+                  className="w-full bg-red-500 hover:bg-red-700 text-white text-xs py-2 px-4 rounded transition-colors mt-2"
                 >
                   Reset Dashboard Data
                 </button>
