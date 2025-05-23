@@ -1313,7 +1313,7 @@ export default function Dashboard() {
               <ul className="text-sm space-y-1">
                 {zoneActivity.map((a, idx) => (
                   <li key={idx} className="border-b pb-1">
-                    <strong>{a.zoneName}</strong>: <span className="text-brand-orange">{a.objectClass}</span> (ID: {a.objectId}) detected at {a.time}
+                    <strong>{a.zoneName}</strong>: <span className="text-brand-orange">{a.objectClass}</span> (ID: {a.objectId}) <span className="text-gray-500">[{a.event}]</span> at {a.time}
                   </li>
                 ))}
               </ul>

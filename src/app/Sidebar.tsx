@@ -192,6 +192,9 @@ export default function Sidebar() {
               <Link href="/deployment-history" className="block text-white hover:text-brand-orange transition-colors duration-200">
                 Deployment History
               </Link>
+              <Link href="/member-tracking-visual" className="block text-white hover:text-brand-orange transition-colors duration-200">
+                Member Tracking Visual
+              </Link>
               <div className="mt-8">
                 <button
                   onClick={handleLogout}
