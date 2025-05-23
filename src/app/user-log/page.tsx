@@ -10,36 +10,33 @@ type LogEntry = {
 
 export default function UserLogPage() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    // Load logs from localStorage
-    const storedLogs = localStorage.getItem('userLogs');
-    if (storedLogs) {
-      setLogs(JSON.parse(storedLogs));
-    }
-
-    // Set up event listener for new logs
-    const handleNewLog = (event: any) => {
-      const newLog = event.detail;
-      setLogs(prevLogs => {
-        const updatedLogs = [newLog, ...prevLogs];
-        localStorage.setItem('userLogs', JSON.stringify(updatedLogs));
-        return updatedLogs;
+    // Fetch logs from the server
+    fetch('/api/log-event')
+      .then(res => res.json())
+      .then(data => {
+        setLogs(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Failed to load logs");
+        setLoading(false);
       });
-    };
-
-    window.addEventListener('new-log', handleNewLog);
-
-    return () => {
-      window.removeEventListener('new-log', handleNewLog);
-    };
   }, []);
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
         <h1 className="text-2xl font-bold text-brand-orange mb-6 text-center">User Log & Audit Trail</h1>
-        <p className="mb-4 text-gray-700 text-center">This page displays all login attempts (success and failure) and admin actions for monitoring and security auditing.</p>
+        <p className="mb-4 text-gray-700 text-center">This page displays all login attempts (success and failure), logouts, and auto logouts for monitoring and security auditing across all users and devices.</p>
+        {loading ? (
+          <div className="text-center text-gray-500">Loading logs...</div>
+        ) : error ? (
+          <div className="text-center text-red-500">{error}</div>
+        ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full border border-gray-200 rounded-lg">
             <thead className="bg-gray-50">
@@ -62,6 +59,7 @@ export default function UserLogPage() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </div>
   );
