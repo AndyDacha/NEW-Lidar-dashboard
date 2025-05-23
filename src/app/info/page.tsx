@@ -211,6 +211,21 @@ export default function InfoPage() {
             <strong>Logic:</strong> The simulation uses mock and real tracking data to animate member movement, interpolating positions between zones and pausing at each zone according to typical dwell times. Zone occupancy, trails, and alerts are updated in real time to reflect the current state of the gym.
           </p>
         </section>
+        <section className="bg-gray-50 rounded-xl shadow p-6">
+          <h2 className="text-xl font-semibold text-brand-orange mb-2">User Log & Audit Trail</h2>
+          <p className="text-gray-700">
+            The <strong>User Log</strong> page provides a centralized audit trail of all user login, logout, and auto-logout (inactivity) events across the entire system.<br /><br />
+            <strong>How it works:</strong>
+            <ul className="list-disc pl-5 mt-2">
+              <li>Every time a user logs in, logs out, or is automatically logged out due to inactivity, the event is recorded on the server.</li>
+              <li>The log is shared and updated in real time for all users and devices—so you can see activity from all users, not just your own device.</li>
+              <li>The <strong>/user-log</strong> page fetches and displays the full, up-to-date log from the server, providing a complete audit trail for security and monitoring.</li>
+              <li>Events include the timestamp, username, and action (login, logout, auto-logout).</li>
+            </ul>
+            <br />
+            This ensures that administrators and staff can monitor user access and activity across the system, improving security and accountability.
+          </p>
+        </section>
       </div>
     </div>
   );
