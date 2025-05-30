@@ -1,0 +1,78 @@
+[
+  {
+    "date": "2025-05-27T09:10:55.602Z",
+    "message": "AF Made Changes"
+  },
+  {
+    "date": "2025-05-23T11:52:26.203Z",
+    "message": "Changed Reset Fonts"
+  },
+  {
+    "date": "2025-05-23T09:22:12.101Z",
+    "message": "AF Made Changes"
+  },
+  {
+    "date": "2025-05-22T14:46:42.779Z",
+    "message": "AF Made Changes"
+  },
+  {
+    "date": "2025-05-22T14:39:25.637Z",
+    "message": "Add deployment timestamp display to sidebar"
+  },
+  {
+    "date": "2025-05-22T14:22:26.391Z",
+    "message": "AF Made Changes"
+  },
+  {
+    "date": "2025-05-22T12:39:17.449Z",
+    "message": "AF Made Changes"
+  },
+  {
+    "date": "2025-05-22T12:34:00.151Z",
+    "message": "AF Made Changes"
+  },
+  {
+    "date": "2025-05-22T12:27:34.499Z",
+    "message": "Fix progress bar count color for visibility on all backgrounds"
+  },
+  {
+    "date": "2025-05-22T12:16:43.792Z",
+    "message": "Fix walkthrough video: allow mp4 in public directory and deploy video file"
+  },
+  {
+    "date": "2025-05-22T12:01:06.600Z",
+    "message": "Improve Deployment Log UI: wider box, monospace font, no line wrap, horizontal scroll"
+  },
+  {
+    "date": "2025-05-22T11:57:11.239Z",
+    "message": "Add auto-logout after 30 minutes of inactivity and logout event logging"
+  },
+  {
+    "date": "2025-05-22T10:45:39.053Z",
+    "message": "AF Made Changes"
+  },
+  {
+    "date": "2025-05-22T10:39:22.603Z",
+    "message": "AF Made Changes"
+  },
+  {
+    "date": "2025-05-22T10:34:47.935Z",
+    "message": "AF Made Changes"
+  },
+  {
+    "date": "2025-05-22T09:11:31.817Z",
+    "message": "Updated"
+  },
+  {
+    "date": "2025-05-22T09:10:39.153Z",
+    "message": "Describe your changes here"
+  },
+  {
+    "date": "2024-05-27T18:00:00Z",
+    "message": "Initial deployment"
+  },
+  {
+    "date": "2025-05-22T12:45:00.000Z",
+    "message": "Trigger new deployment for Equipment Usage Status update"
+  }
+]
