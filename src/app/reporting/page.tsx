@@ -15,45 +15,100 @@ import Link from 'next/link';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
-export default function ReportingPage() {
-  // Helper to get date string (YYYY-MM-DD) from time
-  function getDateString(date: Date) {
-    return date.toISOString().split('T')[0];
-  }
-  const today = getDateString(new Date());
+// For UK timezone conversion
+function getUKDateString(date: Date) {
+  // Convert to UK time (Europe/London)
+  const uk = new Date(date.toLocaleString('en-GB', { timeZone: 'Europe/London' }));
+  const year = uk.getFullYear();
+  const month = String(uk.getMonth() + 1).padStart(2, '0');
+  const day = String(uk.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
-  // Date range state
+export default function ReportingPage() {
+  // Helper to get UK date string (YYYY-MM-DD) from time
+  function getDateString(date: Date) {
+    return getUKDateString(date);
+  }
+  // Use UK timezone for today
+  const now = new Date();
+  const ukNow = new Date(now.toLocaleString('en-GB', { timeZone: 'Europe/London' }));
+  const today = getUKDateString(ukNow);
+
+  // Date range state (allow user to change)
   const [startDate, setStartDate] = useState<string>(today);
   const [endDate, setEndDate] = useState<string>(today);
   const [attendanceData, setAttendanceData] = useState<any[]>([]);
-  // Equipment Usage date range state
+  // Equipment Usage date range state (allow user to change)
   const [equipmentStartDate, setEquipmentStartDate] = useState<string>(today);
   const [equipmentEndDate, setEquipmentEndDate] = useState<string>(today);
+  // New Zone Usage Report date range state (allow user to change)
+  const [zoneStartDate, setZoneStartDate] = useState<string>(today);
+  const [zoneEndDate, setZoneEndDate] = useState<string>(today);
+  // State for when to run the zone usage report
+  const [zoneReportStart, setZoneReportStart] = useState<string>(today);
+  const [zoneReportEnd, setZoneReportEnd] = useState<string>(today);
+  // State for zone usage data
+  const [zoneUsageData, setZoneUsageData] = useState<any[]>([]);
 
-  // Load zoneActivity from localStorage
+  // Always reset date pickers to today on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('zoneActivity');
-      if (stored) {
-        setAttendanceData(JSON.parse(stored));
+    setZoneStartDate(today);
+    setZoneEndDate(today);
+    setZoneReportStart(today);
+    setZoneReportEnd(today);
+  }, [today]);
+
+  // Fetch zone usage data when Run Report is clicked
+  useEffect(() => {
+    async function fetchZoneUsage() {
+      if (!zoneReportStart || !zoneReportEnd) return;
+      try {
+        const params = new URLSearchParams();
+        params.append('start', zoneReportStart);
+        params.append('end', zoneReportEnd);
+        const res = await fetch(`/api/activity?${params.toString()}`);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const data = await res.json();
+        setZoneUsageData(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch zone usage data:', error);
+        setZoneUsageData([]);
       }
     }
-  }, []);
+    fetchZoneUsage();
+  }, [zoneReportStart, zoneReportEnd]);
+
+  // Fetch attendance data from API
+  useEffect(() => {
+    async function fetchAttendance() {
+      try {
+        const params = new URLSearchParams();
+        if (startDate) params.append('start', startDate);
+        if (endDate) params.append('end', endDate);
+        const res = await fetch(`/api/activity?${params.toString()}`);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const data = await res.json();
+        setAttendanceData(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch attendance data:', error);
+        setAttendanceData([]);
+      }
+    }
+    fetchAttendance();
+  }, [startDate, endDate]);
 
   // Prepare filtered attendance per day
   const filteredAttendance: { [date: string]: Set<string> } = {};
-  attendanceData.forEach((a: any) => {
-    if (!a.objectClass) return;
-    const cls = a.objectClass.toLowerCase();
-    if (cls !== 'human' && cls !== 'person') return;
-    // Try to parse a.time as a Date
-    let dateObj: Date;
-    if (a.time && !isNaN(Date.parse(a.time))) {
-      dateObj = new Date(a.time);
-    } else {
-      // fallback: today
-      dateObj = new Date();
-    }
+  const safeAttendanceData = Array.isArray(attendanceData) ? attendanceData : [];
+  safeAttendanceData.forEach((a: any) => {
+    if (!a || a.activityType !== 'start' && a.activityType !== 'stop') return;
+    if (!a.memberId) return;
+    const dateObj = new Date(a.timestamp);
     const dateStr = getDateString(dateObj);
     // Filter by date range
     if (
@@ -61,7 +116,7 @@ export default function ReportingPage() {
       (!endDate || dateStr <= endDate)
     ) {
       if (!filteredAttendance[dateStr]) filteredAttendance[dateStr] = new Set();
-      filteredAttendance[dateStr].add(a.objectId);
+      filteredAttendance[dateStr].add(a.memberId);
     }
   });
 
@@ -110,73 +165,32 @@ export default function ReportingPage() {
         <Link href="/dashboard" className="text-brand-orange underline hover:text-orange-700">Back to Dashboard</Link>
       </div>
 
-      {/* Daily Attendance Report with date range filter */}
+      {/* New Zone Usage Report */}
       <section className="mb-8 p-6 bg-white rounded-lg shadow border border-brand-grey/20">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2 gap-2">
-          <h2 className="text-xl font-semibold text-brand-orange">Daily Attendance Report</h2>
-          <span className="text-sm text-brand-grey bg-brand-orange/10 rounded px-3 py-1 md:ml-4">
-            This report shows the number of unique members (humans/persons) who attended the gym each day, based on entry events. Use the date range below to filter the results.
-          </span>
-        </div>
-        <p className="text-brand-grey mb-4">Shows the number of unique members attending the gym each day. Use the date range below to filter.</p>
+        <h2 className="text-xl font-semibold text-brand-orange mb-2">Zone Usage Report (All Start/Stop Events)</h2>
+        <p className="text-brand-grey mb-4">Shows all 'start' and 'stop' events from the database, grouped by zone, for the selected date range.</p>
+        {/* Dedicated date pickers for this report */}
         <div className="flex flex-wrap gap-4 mb-6 items-center">
           <label className="flex flex-col">
             <span className="text-xs text-brand-grey mb-1">Start Date</span>
-            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="border rounded px-2 py-1" />
+            <input type="date" value={zoneStartDate} onChange={e => setZoneStartDate(e.target.value)} className="border rounded px-2 py-1" />
           </label>
           <label className="flex flex-col">
             <span className="text-xs text-brand-grey mb-1">End Date</span>
-            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="border rounded px-2 py-1" />
+            <input type="date" value={zoneEndDate} onChange={e => setZoneEndDate(e.target.value)} className="border rounded px-2 py-1" />
           </label>
+          <button
+            className="bg-brand-orange text-white px-4 py-2 rounded shadow hover:bg-orange-700 transition"
+            onClick={() => {
+              setZoneReportStart(zoneStartDate);
+              setZoneReportEnd(zoneEndDate);
+            }}
+          >
+            Run Report
+          </button>
         </div>
-        <div className="h-64">
-          {chartLabels.length > 0 ? (
-            <Bar data={data} options={options} />
-          ) : (
-            <div className="text-brand-grey/60 flex items-center justify-center h-full">No attendance data for selected range.</div>
-          )}
-        </div>
-      </section>
-
-      {/* Example Report 2: Equipment Usage Summary */}
-      <section className="mb-8 p-6 bg-white rounded-lg shadow border border-brand-grey/20">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2 gap-2">
-          <h2 className="text-xl font-semibold text-brand-orange">Equipment Usage Summary</h2>
-          <span className="text-sm text-brand-grey bg-brand-orange/10 rounded px-3 py-1 md:ml-4">
-            This report shows the number of times each equipment type was used in each zone, based on detected activity. Use the chart below to compare usage across equipment and zones.
-          </span>
-        </div>
-        {/* Date range filter for Equipment Usage */}
-        <div className="flex flex-wrap gap-4 mb-6 items-center">
-          <label className="flex flex-col">
-            <span className="text-xs text-brand-grey mb-1">Start Date</span>
-            <input type="date" value={equipmentStartDate} onChange={e => setEquipmentStartDate(e.target.value)} className="border rounded px-2 py-1" />
-          </label>
-          <label className="flex flex-col">
-            <span className="text-xs text-brand-grey mb-1">End Date</span>
-            <input type="date" value={equipmentEndDate} onChange={e => setEquipmentEndDate(e.target.value)} className="border rounded px-2 py-1" />
-          </label>
-        </div>
-        {/* Equipment Usage Chart */}
-        <EquipmentUsageChart startDate={equipmentStartDate} endDate={equipmentEndDate} />
-      </section>
-
-      {/* Example Report 3: Peak Hours Analysis */}
-      <section className="mb-8 p-6 bg-white rounded-lg shadow border border-brand-grey/20">
-        <h2 className="text-xl font-semibold text-brand-orange mb-2">Peak Hours Analysis</h2>
-        <p className="text-brand-grey mb-2">Shows the busiest hours in the gym based on member activity.</p>
-        <PeakHoursPieChart />
-      </section>
-
-      {/* Member Access Points Report */}
-      <section className="mb-8 p-6 bg-white rounded-lg shadow border border-brand-grey/20">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2 gap-2">
-          <h2 className="text-xl font-semibold text-brand-orange">Member Access Points</h2>
-          <span className="text-sm text-brand-grey bg-brand-orange/10 rounded px-3 py-1 md:ml-4">
-            This report summarizes member activity at key access points (LHS IN, RHS IN, LHS OUT, RHS OUT). It counts the number of entries and exits detected at each access point zone (case-insensitive).
-          </span>
-        </div>
-        <MemberAccessPointsChart />
+        {/* Only show the summary table here */}
+        <ZoneUsageSummaryTable attendanceData={zoneUsageData} startDate={zoneReportStart} endDate={zoneReportEnd} />
       </section>
     </div>
   );
@@ -186,11 +200,16 @@ export default function ReportingPage() {
 function EquipmentUsageChart({ startDate, endDate }: { startDate: string; endDate: string }) {
   const [zoneActivity, setZoneActivity] = useState<any[]>([]);
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('zoneActivity');
-      if (stored) setZoneActivity(JSON.parse(stored));
+    async function fetchEquipmentUsage() {
+      const params = new URLSearchParams();
+      if (startDate) params.append('start', startDate);
+      if (endDate) params.append('end', endDate);
+      const res = await fetch(`/api/activity?${params.toString()}`);
+      const data = await res.json();
+      setZoneActivity(data);
     }
-  }, []);
+    fetchEquipmentUsage();
+  }, [startDate, endDate]);
 
   // Helper to get date string (YYYY-MM-DD) from time
   function getDateString(date: Date) {
@@ -200,21 +219,15 @@ function EquipmentUsageChart({ startDate, endDate }: { startDate: string; endDat
   // Aggregate equipment usage by zone and type, filtered by date
   const usage: { [zone: string]: { [type: string]: number } } = {};
   zoneActivity.forEach((a: any) => {
-    if (!a.zoneName || !a.objectClass) return;
-    // Try to parse a.time as a Date
-    let dateObj: Date;
-    if (a.time && !isNaN(Date.parse(a.time))) {
-      dateObj = new Date(a.time);
-    } else {
-      dateObj = new Date();
-    }
+    if (!a.zone || !a.equipment) return;
+    const dateObj = new Date(a.timestamp);
     const dateStr = getDateString(dateObj);
     if (
       (!startDate || dateStr >= startDate) &&
       (!endDate || dateStr <= endDate)
     ) {
-      const zone = a.zoneName;
-      const type = a.objectClass;
+      const zone = a.zone;
+      const type = a.equipment;
       if (!usage[zone]) usage[zone] = {};
       usage[zone][type] = (usage[zone][type] || 0) + 1;
     }
@@ -275,20 +288,22 @@ function EquipmentUsageChart({ startDate, endDate }: { startDate: string; endDat
 function MemberAccessPointsChart() {
   const [zoneActivity, setZoneActivity] = useState<any[]>([]);
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('zoneActivity');
-      if (stored) setZoneActivity(JSON.parse(stored));
+    async function fetchAccessPoints() {
+      const res = await fetch('/api/activity');
+      const data = await res.json();
+      setZoneActivity(data);
     }
+    fetchAccessPoints();
   }, []);
 
   // Only include access point zones (case-insensitive)
   const accessZones = ['lhs in', 'rhs in', 'lhs out', 'rhs out'];
   const counts: { [zone: string]: number } = {};
   zoneActivity.forEach((a: any) => {
-    if (!a.zoneName) return;
-    const zone = a.zoneName.trim().toLowerCase();
+    if (!a.zone) return;
+    const zone = a.zone.trim().toLowerCase();
     if (accessZones.includes(zone)) {
-      const label = a.zoneName.trim().toUpperCase();
+      const label = a.zone.trim().toUpperCase();
       counts[label] = (counts[label] || 0) + 1;
     }
   });
@@ -344,20 +359,22 @@ function MemberAccessPointsChart() {
 function PeakHoursPieChart() {
   const [zoneActivity, setZoneActivity] = useState<any[]>([]);
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('zoneActivity');
-      if (stored) setZoneActivity(JSON.parse(stored));
+    async function fetchPeakHours() {
+      const res = await fetch('/api/activity');
+      const data = await res.json();
+      setZoneActivity(data);
     }
+    fetchPeakHours();
   }, []);
 
   // Only include events between 17:00 and 20:00 (inclusive)
   const counts: { [zone: string]: number } = {};
   zoneActivity.forEach((a: any) => {
-    if (!a.zoneName || !a.time) return;
-    // Accept both 'HH:MM:SS' and 'HH:MM' formats
-    const hour = Number(a.time.split(':')[0]);
+    if (!a.zone || !a.timestamp) return;
+    const dateObj = new Date(a.timestamp);
+    const hour = dateObj.getHours();
     if (hour >= 17 && hour <= 20) {
-      const zone = a.zoneName.trim();
+      const zone = a.zone.trim();
       counts[zone] = (counts[zone] || 0) + 1;
     }
   });
@@ -384,6 +401,103 @@ function PeakHoursPieChart() {
       ) : (
         <div className="text-brand-grey/60 flex items-center justify-center h-full">No peak hour event data available.</div>
       )}
+    </div>
+  );
+}
+
+// Helper to get event date string in UK time (YYYY-MM-DD)
+function getEventDateString(ts: string) {
+  const d = new Date(ts);
+  // Get UK date string as YYYY-MM-DD
+  const [day, month, year] = d.toLocaleDateString('en-GB', { timeZone: 'Europe/London' }).split('/');
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+
+// Add ZoneUsageTable component at the end of the file
+function ZoneUsageTable({ attendanceData, startDate, endDate, getDateString }: { attendanceData: any[], startDate: string, endDate: string, getDateString: (d: Date) => string }) {
+  // Filter for start/stop events in date range using UK date string
+  const filtered = attendanceData.filter((a: any) => {
+    if (a.activityType !== 'start' && a.activityType !== 'stop') return false;
+    if (!a.zone) return false;
+    const eventDateStr = getEventDateString(a.timestamp);
+    return (!startDate || eventDateStr >= startDate) && (!endDate || eventDateStr <= endDate);
+  });
+  if (filtered.length === 0) {
+    return <div className="text-brand-grey/60 flex items-center justify-center h-full">No zone usage data for selected range.</div>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full text-sm border border-brand-grey/20">
+        <thead>
+          <tr className="bg-brand-orange/10">
+            <th className="px-2 py-1 text-left">Zone</th>
+            <th className="px-2 py-1 text-left">Member ID</th>
+            <th className="px-2 py-1 text-left">Activity Type</th>
+            <th className="px-2 py-1 text-left">Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map((a, idx) => (
+            <tr key={idx} className="border-b border-brand-grey/20">
+              <td className="px-2 py-1 font-semibold">{a.zone}</td>
+              <td className="px-2 py-1">{a.memberId}</td>
+              <td className="px-2 py-1">{a.activityType}</td>
+              <td className="px-2 py-1 font-mono">{new Date(a.timestamp).toLocaleString('en-GB', { timeZone: 'Europe/London' })}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// Add ZoneUsageSummaryTable component
+function ZoneUsageSummaryTable({ attendanceData, startDate, endDate }: { attendanceData: any[], startDate: string, endDate: string }) {
+  // Ensure attendanceData is an array
+  const safeAttendanceData = Array.isArray(attendanceData) ? attendanceData : [];
+  
+  // Filter for start/stop events in date range using UK date string
+  const filtered = safeAttendanceData.filter((a: any) => {
+    if (!a || a.activityType !== 'start' && a.activityType !== 'stop') return false;
+    if (!a.zone) return false;
+    const eventDateStr = getEventDateString(a.timestamp);
+    return (!startDate || eventDateStr >= startDate) && (!endDate || eventDateStr <= endDate);
+  });
+
+  // Aggregate counts per zone and activityType
+  const zoneCounts: { [zone: string]: { start: number; stop: number } } = {};
+  filtered.forEach((a: any) => {
+    const zone = a.zone;
+    if (!zoneCounts[zone]) zoneCounts[zone] = { start: 0, stop: 0 };
+    if (a.activityType === 'start') zoneCounts[zone].start++;
+    if (a.activityType === 'stop') zoneCounts[zone].stop++;
+  });
+
+  const zones = Object.keys(zoneCounts).sort();
+  if (zones.length === 0) {
+    return <div className="text-brand-grey/60 flex items-center justify-center h-full mb-4">No zone usage data for selected range.</div>;
+  }
+
+  return (
+    <div className="overflow-x-auto mb-6">
+      <table className="min-w-full text-sm border border-brand-grey/20">
+        <thead>
+          <tr className="bg-brand-orange/10">
+            <th className="px-2 py-1 text-left">Zone</th>
+            <th className="px-2 py-1 text-left">Start Events</th>
+            <th className="px-2 py-1 text-left">Stop Events</th>
+          </tr>
+        </thead>
+        <tbody>
+          {zones.map((zone) => (
+            <tr key={zone} className="border-b border-brand-grey/20">
+              <td className="px-2 py-1 font-semibold">{zone}</td>
+              <td className="px-2 py-1">{zoneCounts[zone].start}</td>
+              <td className="px-2 py-1">{zoneCounts[zone].stop}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 } 

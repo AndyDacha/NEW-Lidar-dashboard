@@ -189,6 +189,9 @@ export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [showAlerts, setShowAlerts] = useState(true);
   const [ballAlert, setBallAlert] = useState(false);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  // Add state for DB activity data for today
+  const [dbActivityToday, setDbActivityToday] = useState<any[]>([]);
 
   // Add useEffect for defibrillator alert timeout
   useEffect(() => {
@@ -334,6 +337,25 @@ export default function Dashboard() {
           (newCounts[parsed.zone_name][parsed.object_class] || 0) + 1;
         return newCounts;
       });
+
+      // --- POST to /api/activity for DB logging ---
+      const activityPayload = {
+        zone: parsed.zone_name,
+        activityType: parsed.event || "unknown",
+        memberId: parsed.object_id,
+        equipment: parsed.equipment, // if available
+        objectType: parsed.object_class, // NEW: include object type
+        timestamp: new Date().toISOString(),
+      };
+      console.log('[DEBUG] POST /api/activity payload:', activityPayload); // DEBUG LOG
+      fetch(`${window.location.origin}/api/activity`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(activityPayload),
+      }).catch(err => {
+        console.error('Failed to POST activity:', err);
+      });
+      // --- END POST ---
 
       // Trigger ball alert if object_class is 'ball'
       if (typeof parsed.object_class === 'string' && parsed.object_class.toLowerCase() === 'ball') {
@@ -717,6 +739,159 @@ export default function Dashboard() {
     // eslint-disable-next-line
   }, [objectPresence, objectCounts, totalObjects]);
 
+  useEffect(() => {
+    async function fetchRecentActivity() {
+      try {
+        const res = await fetch('/api/activity');
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const data = await res.json();
+        setRecentActivity(Array.isArray(data) ? data.slice(0, 100) : []); // Show the 100 most recent
+      } catch (error) {
+        console.error('Failed to fetch recent activity:', error);
+        setRecentActivity([]);
+      }
+    }
+    fetchRecentActivity();
+    const interval = setInterval(fetchRecentActivity, 10000); // Poll every 10 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  // Helper to get UK date string (YYYY-MM-DD)
+  function getUKDateString(date: Date) {
+    const uk = new Date(date.toLocaleString('en-GB', { timeZone: 'Europe/London' }));
+    const year = uk.getFullYear();
+    const month = String(uk.getMonth() + 1).padStart(2, '0');
+    const day = String(uk.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Fetch today's activity from DB on mount and at midnight
+  useEffect(() => {
+    async function fetchTodayActivity() {
+      try {
+        const today = getUKDateString(new Date());
+        const params = new URLSearchParams();
+        params.append('start', today);
+        params.append('end', today);
+        const res = await fetch(`/api/activity?${params.toString()}`);
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const data = await res.json();
+        setDbActivityToday(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch today\'s activity:', error);
+        setDbActivityToday([]);
+      }
+    }
+    fetchTodayActivity();
+    // Set up timer to refetch at next UK midnight
+    const now = new Date();
+    const ukNow = new Date(now.toLocaleString('en-GB', { timeZone: 'Europe/London' }));
+    const nextMidnight = new Date(ukNow);
+    nextMidnight.setHours(24, 0, 0, 0);
+    const msToMidnight = nextMidnight.getTime() - ukNow.getTime();
+    const timeout = setTimeout(() => {
+      fetchTodayActivity();
+    }, msToMidnight + 1000); // add 1s buffer
+    return () => clearTimeout(timeout);
+  }, []);
+
+  // Compute member paths and average durations from dbActivityToday
+  function computeZoneAvgDurations(activity: any[]) {
+    // Group events by memberId, sort by timestamp
+    const memberEvents: { [memberId: string]: any[] } = {};
+    activity.forEach(a => {
+      if (!a.memberId || !a.zone || !a.timestamp) return;
+      if (!memberEvents[a.memberId]) memberEvents[a.memberId] = [];
+      memberEvents[a.memberId].push(a);
+    });
+    Object.values(memberEvents).forEach(events => events.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()));
+    // Build per-member zone paths with entry/exit times
+    const zoneDurations: { [zone: string]: number[] } = {};
+    Object.values(memberEvents).forEach(events => {
+      for (let i = 0; i < events.length - 1; ++i) {
+        const curr = events[i];
+        const next = events[i + 1];
+        if (curr.zone && next.zone && curr.zone === next.zone && curr.activityType === 'start' && next.activityType === 'stop') {
+          const t1 = new Date(curr.timestamp).getTime();
+          const t2 = new Date(next.timestamp).getTime();
+          if (t2 > t1) {
+            if (!zoneDurations[curr.zone]) zoneDurations[curr.zone] = [];
+            zoneDurations[curr.zone].push((t2 - t1) / 1000); // seconds
+          }
+        }
+      }
+    });
+    // Compute averages
+    return Object.entries(zoneDurations).map(([zone, times]) => ({
+      zone,
+      avg: times.length ? times.reduce((a, b) => a + b, 0) / times.length : 0
+    }));
+  }
+
+  // Use DB data for average time spent per zone (today)
+  const zoneAvgDurations = computeZoneAvgDurations(dbActivityToday);
+  const avgTimeLineData = {
+    labels: zoneAvgDurations.map(z => z.zone),
+    datasets: [
+      {
+        label: 'Avg Time Spent (s)',
+        data: zoneAvgDurations.map(z => z.avg),
+        fill: false,
+        borderColor: '#F7931E',
+        backgroundColor: '#F7931E',
+        tension: 0.3,
+        pointRadius: 5,
+        pointBackgroundColor: '#F7931E',
+        pointBorderColor: '#fff',
+        pointHoverRadius: 7
+      }
+    ]
+  };
+  const avgTimeLineOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      title: {
+        display: true,
+        text: 'Average Time Spent per Zone',
+        color: '#F7931E',
+        font: { size: 16 }
+      },
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: function(ctx: any) {
+            return `Avg: ${Math.round(ctx.parsed.y)}s`;
+          }
+        }
+      },
+      datalabels: {
+        display: true,
+        color: '#F7931E',
+        anchor: 'center' as const,
+        align: 'top' as const,
+        formatter: function(value: any) {
+          return Math.round(value) + 's';
+        }
+      }
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'Zone', color: '#F7931E' },
+        ticks: { color: '#666' }
+      },
+      y: {
+        title: { display: true, text: 'Seconds', color: '#F7931E' },
+        ticks: { color: '#666' },
+        beginAtZero: true
+      }
+    }
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -927,83 +1102,6 @@ export default function Dashboard() {
           text: 'Count',
           color: '#F7931E'
         }
-      }
-    }
-  };
-
-  // Calculate average time spent per zone for the line graph
-  const zoneDurations: { [zone: string]: number[] } = {};
-  Object.values(memberPaths).forEach(path => {
-    path.forEach((entry, i) => {
-      if (i < path.length - 1) {
-        const next = path[i + 1];
-        const t1 = timeStringToSeconds(entry.time);
-        const t2 = timeStringToSeconds(next.time);
-        if (isFinite(t2 - t1) && t2 > t1) {
-          if (!zoneDurations[entry.zone]) zoneDurations[entry.zone] = [];
-          zoneDurations[entry.zone].push(t2 - t1);
-        }
-      }
-    });
-  });
-  const zoneAvgDurations = Object.entries(zoneDurations).map(([zone, times]) => ({
-    zone,
-    avg: times.length ? times.reduce((a, b) => a + b, 0) / times.length : 0
-  }));
-  const avgTimeLineData = {
-    labels: zoneAvgDurations.map(z => z.zone),
-    datasets: [
-      {
-        label: 'Avg Time Spent (s)',
-        data: zoneAvgDurations.map(z => z.avg),
-        fill: false,
-        borderColor: '#F7931E',
-        backgroundColor: '#F7931E',
-        tension: 0.3,
-        pointRadius: 5,
-        pointBackgroundColor: '#F7931E',
-        pointBorderColor: '#fff',
-        pointHoverRadius: 7
-      }
-    ]
-  };
-  const avgTimeLineOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      title: {
-        display: true,
-        text: 'Average Time Spent per Zone',
-        color: '#F7931E',
-        font: { size: 16 }
-      },
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: function(ctx: any) {
-            return `Avg: ${Math.round(ctx.parsed.y)}s`;
-          }
-        }
-      },
-      datalabels: {
-        display: true,
-        color: '#F7931E',
-        anchor: 'center' as const,
-        align: 'top' as const,
-        formatter: function(value: any) {
-          return Math.round(value) + 's';
-        }
-      }
-    },
-    scales: {
-      x: {
-        title: { display: true, text: 'Zone', color: '#F7931E' },
-        ticks: { color: '#666' }
-      },
-      y: {
-        title: { display: true, text: 'Seconds', color: '#F7931E' },
-        ticks: { color: '#666' },
-        beginAtZero: true
       }
     }
   };
@@ -1515,11 +1613,19 @@ export default function Dashboard() {
         <div className="col-span-1 space-y-6">
           <div className="bg-white p-4 rounded-lg shadow overflow-y-auto border border-brand-grey/30" style={{ height: '450px' }}>
             <h2 className="text-lg font-semibold mb-2 text-brand-orange">Recent Activity</h2>
-            {zoneActivity.length > 0 ? (
+            {recentActivity.length > 0 ? (
               <ul className="text-sm space-y-1">
-                {zoneActivity.map((a, idx) => (
-                  <li key={idx} className="border-b pb-1">
-                    <strong>{a.zoneName}</strong>: <span className="text-brand-orange">{a.objectClass}</span> (ID: {a.objectId}) <span className={`font-semibold ${a.event === 'start' ? 'text-green-600' : a.event === 'stop' ? 'text-red-600' : 'text-gray-500'}`}>[{a.event}]</span> at {a.time}
+                {recentActivity.map((a, idx) => (
+                  <li key={a.id || idx} className="border-b pb-1">
+                    <strong>{a.zone}</strong>: <span className={
+                      a.activityType === 'start' ? 'text-green-600' :
+                      a.activityType === 'stop' ? 'text-red-600' :
+                      'text-brand-orange'
+                    }>{a.activityType}</span>
+                    {(a.objectType || a.object_class || a.objectClass) && <span className="ml-1 text-xs text-gray-500">({a.objectType || a.object_class || a.objectClass})</span>}
+                    {a.memberId && <> (ID: {a.memberId})</>}
+                    {a.equipment && <> [Equipment: {a.equipment}]</>}
+                    <span className="text-gray-500"> at {new Date(a.timestamp).toLocaleString()}</span>
                   </li>
                 ))}
               </ul>
@@ -1582,12 +1688,13 @@ export default function Dashboard() {
           includedZones.forEach(zone => {
             hourlyCounts[zone] = Array(24).fill(0);
           });
-          // Use zoneActivity to count events per hour per zone
-          zoneActivity.forEach(activity => {
-            if (includedZones.includes(activity.zoneName)) {
-              const hour = Number(activity.time.split(':')[0]);
-              if (!isNaN(hour)) {
-                hourlyCounts[activity.zoneName][hour]++;
+          // Use dbActivityToday to count events per hour per zone
+          dbActivityToday.forEach(activity => {
+            if (includedZones.includes(activity.zone)) {
+              const date = new Date(activity.timestamp);
+              const ukHour = new Date(date.toLocaleString('en-GB', { timeZone: 'Europe/London' })).getHours();
+              if (!isNaN(ukHour)) {
+                hourlyCounts[activity.zone][ukHour]++;
               }
             }
           });
