@@ -1,7 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+// Initialize Prisma Client
+const prismaClientSingleton = () => {
+  return new PrismaClient();
+};
+
+declare global {
+  var prisma: undefined | ReturnType<typeof prismaClientSingleton>;
+}
+
+const prisma = globalThis.prisma ?? prismaClientSingleton();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalThis.prisma = prisma;
+}
 
 // Helper to determine environment
 function getEnvironment() {
@@ -72,7 +85,7 @@ export async function POST(req: NextRequest) {
         zone,
         timestamp: timestamp ? new Date(timestamp) : undefined,
         objectType,
-        environment: getEnvironment(), // Add environment information
+        environment: getEnvironment(),
       },
     });
     return NextResponse.json(activity, { status: 201 });
