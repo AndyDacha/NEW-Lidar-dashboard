@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Club {
+  id        Int      @id @default(autoincrement())
+  name      String
+  location  String
+  region    String
+  createdAt DateTime @default(now())
+}
+
+model Activity {
+  id           Int      @id @default(autoincrement())
+  memberId     String?
+  activityType String
+  equipment    String?
+  zone         String?
+  timestamp    DateTime @default(now())
+  objectType   String?
+  environment  String   @default("production")
+}
