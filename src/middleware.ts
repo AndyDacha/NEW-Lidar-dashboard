@@ -5,7 +5,7 @@ export function middleware(request: NextRequest) {
   // Get the auth cookie
   const authCookie = request.cookies.get('auth')
   
-  // Check if we're on a protected route
+  // Define protected routes
   const isProtectedRoute = 
     request.nextUrl.pathname.startsWith('/dashboard') ||
     request.nextUrl.pathname.startsWith('/reporting') ||
@@ -15,26 +15,44 @@ export function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/user-log') ||
     request.nextUrl.pathname.startsWith('/scott-work');
 
-  // If on a protected route and no valid auth cookie
-  if (isProtectedRoute && (!authCookie || authCookie.value !== 'true')) {
-    // Create the login URL with the current URL as the return path
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('returnTo', request.nextUrl.pathname)
-    return NextResponse.redirect(loginUrl)
+  // Allow access to static files and API routes
+  if (
+    request.nextUrl.pathname.startsWith('/_next') ||
+    request.nextUrl.pathname.startsWith('/api') ||
+    request.nextUrl.pathname.startsWith('/favicon.ico')
+  ) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next()
+  // If on root path and authenticated, redirect to dashboard
+  if (request.nextUrl.pathname === '/' && authCookie?.value === 'true') {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  // If on login page and already authenticated, redirect to dashboard
+  if (request.nextUrl.pathname === '/login' && authCookie?.value === 'true') {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  // If on a protected route and not authenticated, redirect to login
+  if (isProtectedRoute && (!authCookie || authCookie.value !== 'true')) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('returnTo', request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
 }
 
 // Configure which routes to run middleware on
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/reporting/:path*',
-    '/site-drawing/:path*',
-    '/mqtt-log/:path*',
-    '/info/:path*',
-    '/user-log/:path*',
-    '/scott-work/:path*'
-  ]
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
 } 

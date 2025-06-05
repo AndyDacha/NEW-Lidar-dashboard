@@ -7,6 +7,7 @@ export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
+  const returnTo = searchParams?.get('returnTo') || '/dashboard';
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -16,10 +17,33 @@ export default function LoginForm() {
 
     const user = users.find(u => u.username === username && u.password === password);
     if (user) {
-      document.cookie = `auth=true; path=/; max-age=86400; SameSite=Strict;`;
-      document.cookie = `userRole=${user.role}; path=/; max-age=86400; SameSite=Strict;`;
-      document.cookie = `username=${user.username}; path=/; max-age=86400; SameSite=Strict;`;
-      router.push("/scott-work");
+      // Set cookies with consistent settings
+      const setCookie = (name: string, value: string) => {
+        document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=86400; secure; samesite=lax`;
+      };
+
+      setCookie('auth', 'true');
+      setCookie('userRole', user.role);
+      setCookie('username', user.username);
+      
+      // Log successful login
+      try {
+        await fetch('/api/log-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            timestamp: new Date().toISOString(),
+            user: username,
+            action: 'Login Success',
+            ip: ''
+          })
+        });
+      } catch (error) {
+        console.error('Failed to log login event:', error);
+      }
+      
+      // Redirect to the returnTo URL or dashboard
+      router.push(returnTo);
     } else {
       setError("Invalid username or password");
     }

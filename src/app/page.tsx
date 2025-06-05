@@ -1,6 +1,16 @@
 import Link from 'next/link'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 
 export default function Home() {
+  const cookieStore = cookies()
+  const authCookie = cookieStore.get('auth')
+
+  // If authenticated, redirect to dashboard
+  if (authCookie?.value === 'true') {
+    redirect('/dashboard')
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white p-8">
       <h1 className="text-4xl font-bold text-brand-orange mb-4 text-center">Dacha SSI Smart Gym Monitoring Solutions</h1>
