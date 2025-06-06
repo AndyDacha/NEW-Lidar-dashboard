@@ -20,7 +20,7 @@ export default function LoginForm() {
       body: JSON.stringify({ username, password })
     });
     if (res.ok) {
-      router.push(returnTo);
+      window.location.href = returnTo;
     } else {
       setError("Invalid username or password");
     }
