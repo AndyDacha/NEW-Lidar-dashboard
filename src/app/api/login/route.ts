@@ -3,8 +3,10 @@ import { users } from '../../auth/users';
 
 export async function POST(req: Request) {
   const { username, password } = await req.json();
+  console.log('[LOGIN API] Received login attempt for:', username);
   const user = users.find(u => u.username === username && u.password === password);
   if (!user) {
+    console.log('[LOGIN API] Invalid credentials for:', username);
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
@@ -30,5 +32,6 @@ export async function POST(req: Request) {
     secure: true,
     maxAge: 86400,
   });
+  console.log('[LOGIN API] Set cookies for:', username);
   return res;
 } 

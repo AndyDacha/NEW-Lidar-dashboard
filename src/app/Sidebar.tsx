@@ -7,6 +7,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [lastDeployment, setLastDeployment] = useState<string>('Loading...');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -70,6 +71,24 @@ export default function Sidebar() {
         window.removeEventListener(event, resetTimer);
       });
     };
+  }, []);
+
+  useEffect(() => {
+    // Check for auth cookie on mount
+    const getCookie = (name: string) => {
+      try {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+          const part = parts.pop();
+          if (part) return part.split(';').shift();
+        }
+      } catch (e) {
+        return '';
+      }
+      return '';
+    };
+    setIsAuthenticated(getCookie('auth') === 'true');
   }, []);
 
   const handleLogout = () => {
@@ -204,14 +223,16 @@ export default function Sidebar() {
               <Link href="/clubs" className="block text-white hover:text-brand-orange transition-colors duration-200">
                 Global Clubs
               </Link>
-              <div className="mt-8">
-                <button
-                  onClick={handleLogout}
-                  className="w-full bg-brand-orange hover:bg-brand-orange/90 text-white font-bold py-2 px-4 rounded transition-colors"
-                >
-                  Log Out
-                </button>
-              </div>
+              {isAuthenticated && (
+                <div className="mt-8">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full bg-brand-orange hover:bg-brand-orange/90 text-white font-bold py-2 px-4 rounded transition-colors"
+                  >
+                    Log Out
+                  </button>
+                </div>
+              )}
               <div className="mt-2">
                 <button
                   onClick={() => {

@@ -3,6 +3,8 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const authCookie = request.cookies.get('auth');
+  console.log('[MIDDLEWARE] Path:', pathname, '| Auth cookie:', authCookie?.value);
   // Allow access to login and static files
   if (
     pathname.startsWith('/login') ||
@@ -14,8 +16,8 @@ export function middleware(request: NextRequest) {
   }
   // Protect /dashboard
   if (pathname.startsWith('/dashboard')) {
-    const hasAuth = request.cookies.get('auth');
-    if (!hasAuth) {
+    if (!authCookie || authCookie.value !== 'true') {
+      console.log('[MIDDLEWARE] Redirecting to /login from', pathname);
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = '/login';
       return NextResponse.redirect(loginUrl);
