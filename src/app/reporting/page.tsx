@@ -64,14 +64,14 @@ export default function ReportingPage() {
     async function fetchZoneUsage() {
       if (!zoneReportStart || !zoneReportEnd) return;
       try {
-        const params = new URLSearchParams();
-        params.append('start', zoneReportStart);
-        params.append('end', zoneReportEnd);
-        const res = await fetch(`/api/activity?${params.toString()}`);
+      const params = new URLSearchParams();
+      params.append('start', zoneReportStart);
+      params.append('end', zoneReportEnd);
+      const res = await fetch(`/api/activity?${params.toString()}`);
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-        const data = await res.json();
+      const data = await res.json();
         setZoneUsageData(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Failed to fetch zone usage data:', error);
@@ -85,14 +85,14 @@ export default function ReportingPage() {
   useEffect(() => {
     async function fetchAttendance() {
       try {
-        const params = new URLSearchParams();
-        if (startDate) params.append('start', startDate);
-        if (endDate) params.append('end', endDate);
-        const res = await fetch(`/api/activity?${params.toString()}`);
+      const params = new URLSearchParams();
+      if (startDate) params.append('start', startDate);
+      if (endDate) params.append('end', endDate);
+      const res = await fetch(`/api/activity?${params.toString()}`);
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-        const data = await res.json();
+      const data = await res.json();
         setAttendanceData(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Failed to fetch attendance data:', error);

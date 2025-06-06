@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { users } from "../auth/users";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -15,34 +14,12 @@ export default function LoginForm() {
     const username = formData.get("username") as string;
     const password = formData.get("password") as string;
 
-    const user = users.find(u => u.username === username && u.password === password);
-    if (user) {
-      // Set cookies with consistent settings
-      const setCookie = (name: string, value: string) => {
-        document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=86400; secure; samesite=lax`;
-      };
-
-      setCookie('auth', 'true');
-      setCookie('userRole', user.role);
-      setCookie('username', user.username);
-      
-      // Log successful login
-      try {
-        await fetch('/api/log-event', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            timestamp: new Date().toISOString(),
-            user: username,
-            action: 'Login Success',
-            ip: ''
-          })
-        });
-      } catch (error) {
-        console.error('Failed to log login event:', error);
-      }
-      
-      // Redirect to the returnTo URL or dashboard
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    if (res.ok) {
       router.push(returnTo);
     } else {
       setError("Invalid username or password");

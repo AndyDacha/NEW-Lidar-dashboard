@@ -23,27 +23,27 @@ function getEnvironment() {
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const start = searchParams.get('start');
-    const end = searchParams.get('end');
-    let where: any = {};
-    if (start || end) {
-      let endDate: Date | undefined = undefined;
-      if (end) {
-        // If end is YYYY-MM-DD, set to end of day (23:59:59.999)
-        const endObj = new Date(end);
-        endObj.setHours(23, 59, 59, 999);
-        endDate = endObj;
-      }
-      where.timestamp = {
-        ...(start ? { gte: new Date(start) } : {}),
-        ...(end ? { lte: endDate } : {}),
-      };
+  const { searchParams } = new URL(req.url);
+  const start = searchParams.get('start');
+  const end = searchParams.get('end');
+  let where: any = {};
+  if (start || end) {
+    let endDate: Date | undefined = undefined;
+    if (end) {
+      // If end is YYYY-MM-DD, set to end of day (23:59:59.999)
+      const endObj = new Date(end);
+      endObj.setHours(23, 59, 59, 999);
+      endDate = endObj;
     }
-    const activities = await prisma.activity.findMany({
-      where,
-      orderBy: { timestamp: 'desc' },
-    });
+    where.timestamp = {
+      ...(start ? { gte: new Date(start) } : {}),
+      ...(end ? { lte: endDate } : {}),
+    };
+  }
+  const activities = await prisma.activity.findMany({
+    where,
+    orderBy: { timestamp: 'desc' },
+  });
 
     // Deduplicate activities based on their unique characteristics
     const uniqueActivities = activities.reduce((acc: any[], current: any) => {
