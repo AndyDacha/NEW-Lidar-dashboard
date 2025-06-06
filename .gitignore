@@ -36,3 +36,5 @@ next-env.d.ts
 // public/*.mp4
 public/*.mov
 public/*.pdf public/CCTV Capture.mp4
+.env
+.env.txt
