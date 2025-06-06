@@ -225,12 +225,12 @@ export default function Sidebar() {
               </Link>
               {isAuthenticated && (
                 <div className="mt-8">
-                  <button
-                    onClick={handleLogout}
+                  <Link
+                    href="/logout"
                     className="w-full bg-brand-orange hover:bg-brand-orange/90 text-white font-bold py-2 px-4 rounded transition-colors"
                   >
                     Log Out
-                  </button>
+                  </Link>
                 </div>
               )}
               <div className="mt-2">
